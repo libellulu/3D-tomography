@@ -26,10 +26,10 @@ def function_creation(nb_x, nb_y , spacing,z):
 
         for y in range (nb_y):
             Monarray=[-length/2+x*spacing,-length/2+y*spacing,z]
-            #print(Monarray)
+            #print('monarray',Monarray)
             final_array.append(Monarray)
     final_array=np.array(final_array)
-    #print(final_array)
+    #print('final',final_array)
     return(final_array)
 
 A=function_creation(9,9,2.5,0)
@@ -72,27 +72,39 @@ fig = plt.figure()
 
 ax = fig.add_subplot(1,2,1, projection='3d')
 
+list_x_CCD1=[]
+list_y_CCD1=[]
+list_z_CCD1=[]
 for detector in CCD_1:
     #print('detectors:', detector)
     x_vector=-(PDarray_position1[0]+t*(detector[0]-PDarray_position1[0]))
     y_vector=-(PDarray_position1[1]+t*(detector[1]-PDarray_position1[1]))
     z_vector=(PDarray_position1[2]+t*(detector[2]-PDarray_position1[2]))
-    ax.plot(x_vector,y_vector,z_vector,c='red')
+    list_y_CCD1.append(y_vector)
+    list_x_CCD1.append(x_vector)
+    list_z_CCD1.append(z_vector)
+    #ax.plot(x_vector,y_vector,z_vector,c='red')
+print('x',list_x_CCD1[0])
+print('y',list_y_CCD1[0])
+print('z',list_z_CCD1[0])
 
 for detector_2 in CCD_2:
     #print('detectors2:', detector_2)
     x_vector_2=-(PDarray_position2[0]+t*(detector_2[0]-PDarray_position2[0]))
     y_vector_2=(PDarray_position2[1]+t*(detector_2[1]-PDarray_position2[1]))
     z_vector_2=-(PDarray_position2[2]+t*(detector_2[2]-PDarray_position2[2]))
-    ax.plot(x_vector_2,y_vector_2,z_vector_2)
+    #ax.plot(x_vector_2,y_vector_2,z_vector_2)
 
 for detector_3 in CCD_3:
-    #print('detectors2:', detector_2)
+
     x_vector_3=(PDarray_position3[0]+t*(detector_3[0]-PDarray_position3[0]))
     y_vector_3=(PDarray_position3[1]+t*(detector_3[1]-PDarray_position3[1]))
     z_vector_3=(PDarray_position3[2]+t*(detector_3[2]-PDarray_position3[2]))
-    ax.plot(x_vector_3,y_vector_3,z_vector_3,c='green')
 
+    ax.plot(x_vector_3,y_vector_3,z_vector_3,c='green')
+save=(x_vector,y_vector,z_vector)
+
+print('save',save[0][2])
 
 ax.set_xlabel('x')
 ax.set_ylabel('y')
@@ -102,7 +114,7 @@ origin = np.array([0, 0, 0])
 #axis and radius
 p0 = np.array([-50, 0, 0])
 p1 = np.array([50, 0, 0])
-R = 48.5
+R = 97
 #vector in direction of axis
 v = p1 - p0
 #find magnitude of vector
@@ -126,9 +138,48 @@ theta = np.linspace(0, 2 * np.pi, 100)
 t, theta = np.meshgrid(t, theta)
 #generate coordinates for surface
 X, Y, Z = [p0[i] + v[i] * t + R * np.sin(theta) * n1[i] + R * np.cos(theta) * n2[i] for i in [0, 1, 2]]
-ax.plot_surface(X, Y, Z)
+ax.plot_surface(X, Y, Z,color='plum')
 
-plt.show()
+#plt.show()
+
+#function to have a scalar corresponding to the intensity over a line of sight (los)
+def example_g(x,y,z,radius):
+    if np.sqrt(x**2+y**2)>radius:
+        g=0
+    else:
+        g=1
+    return g
+
+#this function gives several points of 3 coordinates [x,y,z], and all these points constitute
+#an array that makes the Line Of sight
+def LOS_creation(listx,listy,listz):
+    vector_coord=[]
+    for n in range(0,len(listx)):
+        print('survived')
+        new_vect=[listx[n],listy[n],listz[n]]
+        vector_coord.append(new_vect)
+    vector_coord=np.array(vector_coord)
+    return vector_coord
+print('mylos',LOS_creation(list_x_CCD1[0],list_y_CCD1[0],list_z_CCD1[0]))
+
+#I need to use each coordinate [x,y,z] of vector_coord inside of function_g
+#to each g([x,y,z]) , it correspond a scalar value of intensity of the plasma
+#then in my function integration I need to add this scalar with g[x,y,z] of the following point in my LOS_creation
+# as there are 10 points [x,y,z] in each LOS the integration of ONE LOS will be a sum of 10 values
+#then the function integration (or another function using it) will need to do the same sum on another LOS_creation
+#example: sum on LOS_creation(list_x_CCD1[0],list_y_CCD1[0],list_z_CCD1[0]) has to be followed by :
+#LOS_creation(list_x_CCD1[1],list_y_CCD1[1],list_z_CCD1[1]) and this until the final index (number of LOS in one CCD)
+#then the same for the two other CCD
+
+
+def integration(function_g, LOS_coordinates, points_interval=0.001):
+    sum=0
+    for n in LOS_coordinates:
+      sum=sum+g(LOS_coordinates)
+
+
+
+
 
 
 
