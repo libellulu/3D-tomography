@@ -229,35 +229,6 @@ def draw_cylinder(radius=100):
     ax.plot_surface(X, Y, Z,color='plum')
 
     return X,Y,Z
-
-
-#what we could call the main
-
-#creation of the 3 CCD at the good place in space
-CCD_1,CCD_2,CCD_3=creation_of_3D_sensor_in_space(function_creation(4,4,2))
-
-#preparing the plot
-fig = plt.figure()
-ax = fig.add_subplot(1,2,1, projection='3d')
-ax.set_xlabel('x')
-ax.set_ylabel('y')
-ax.set_zlabel('z')
-
-#call function for plot+show
-draw_cylinder(100)
-list_x_CCD3, list_y_CCD3,list_z_CCD3,list_x_CCD2,list_y_CCD2,list_z_CCD2,list_x_CCD1,list_y_CCD1,list_z_CCD1=lists_for_LOS_draw(CCD_1,CCD_2,CCD_3)
-plt.show()
-
-#function to have a scalar corresponding to the intensity over a line of sight (los)
-def example_g(x,y,z,radius):
-    if np.sqrt(x**2+y**2)>radius:
-        g=1
-    else:
-        g=1
-    return g
-
-#this function gives several points of 3 coordinates [x,y,z], and all these points constitute
-#an array that makes the Line Of sight
 def LOS_creation(listx,listy,listz):
     """This function gives several points of 3 coordinates [x,y,z],
     and all these points constitute an array that makes the Line Of sight
@@ -284,6 +255,33 @@ def LOS_creation(listx,listy,listz):
     vector_coord=np.array(vector_coord)
     return vector_coord
 
+#what we could call the main
+
+#creation of the 3 CCD at the good place in space
+CCD_1,CCD_2,CCD_3=creation_of_3D_sensor_in_space(function_creation(4,4,2))
+
+#preparing the plot
+fig = plt.figure()
+ax = fig.add_subplot(1,2,1, projection='3d')
+ax.set_xlabel('x')
+ax.set_ylabel('y')
+ax.set_zlabel('z')
+
+#call function for plot+show
+draw_cylinder(100)
+list_x_CCD3, list_y_CCD3,list_z_CCD3,list_x_CCD2,list_y_CCD2,list_z_CCD2,list_x_CCD1,list_y_CCD1,list_z_CCD1=lists_for_LOS_draw(CCD_1,CCD_2,CCD_3)
+plt.show()
+
+#function to have a scalar corresponding to the intensity over a line of sight (los)
+def example_g(x,y,z,radius):
+    if np.sqrt(x**2+y**2)>radius:
+        g=1
+    else:
+        g=1
+    return g
+
+
+
 
 #I need to use each coordinate [x,y,z] of vector_coord inside of function_g
 #to each g([x,y,z]) , it correspond a scalar value of intensity of the plasma
@@ -301,9 +299,18 @@ def integration_no_interval_CCD(function_g,listx,listy,listz):
     remember_coord=defaultdict(list)
 
     for i in range(0,len(listx)):
+        vector_ref_begining=LOS_creation(listx[i],listy[i],listz[i])[0]
+        vector_ref_end=LOS_creation(listx[i],listy[i],listz[i])[-1]
+        dist_x=(vector_ref_end[0]-vector_ref_begining[0])**2
+        dist_y=(vector_ref_end[1]-vector_ref_begining[1])**2
+        dist_z=(vector_ref_end[2]-vector_ref_begining[2])**2
+        length_of_line = np.sqrt(dist_x+dist_y+dist_z)
+        print('length', length_of_line)
+        interval_dl= length_of_line/number_of_points_per_line
+
         for n in range(0,number_of_points_per_line):
             A=LOS_creation(listx[i],listy[i],listz[i])[n]
-            intensity_list_LOS[i].append(function_g(A[0],A[1],A[2],47))
+            intensity_list_LOS[i].append(function_g(A[0],A[1],A[2],47)*interval_dl)
             remember_coord[i].append({'x':A[0], 'y':A[1], 'z':A[2]})
     print('coordinate of the point number 1 in the line number 6 of the CCD1',remember_coord[6][0])
     print('coordinate of the last point in the line number 6 of the CCD1',remember_coord[6][-1])
@@ -313,8 +320,6 @@ def integration_no_interval_CCD(function_g,listx,listy,listz):
 
 
 integration_no_interval_CCD(example_g,list_x_CCD1,list_y_CCD1,list_z_CCD1)
-
-print('last elemennt',LOS_creation(list_x_CCD1[1],list_y_CCD1[1],list_z_CCD1[1])[-1])
 
 def integration_with_interval(function_g,listx,listy,listz,interval_size):
     intensity_list_LOS = defaultdict(list)
@@ -358,7 +363,7 @@ def integration_with_interval(function_g,listx,listy,listz,interval_size):
             intensity_list_LOS[i].append(function_g(new_x,new_y,new_z,47))
             remember_coord[i].append({'x':new_x, 'y':new_y, 'z':new_z})
     intensity_list_LOS[i].append(function_g(vector_ref_end[0],vector_ref_end[1],vector_ref_end[2],47))
-#    remember_coord[i].append({'x':last, 'y':last, 'z':last})
+
     print('seconde fonction')
     print('coordinate of the point number 1 in the line number 6 of the CCD1',remember_coord[6][0])
     print('coordinate of the last point in the line number 6 of the CCD1',remember_coord[6][-1])
@@ -368,20 +373,6 @@ def integration_with_interval(function_g,listx,listy,listz,interval_size):
 
 
 
-integration_with_interval(example_g,list_x_CCD1,list_y_CCD1,list_z_CCD1,1)
-    # for i in range(0,len(listx)):
-    #     for n in range(0,number_of_points_per_line):
-    #         A=LOS_creation(listx[i],listy[i],listz[i])[n]
-    #         #intensity_list_LOS[i].append(function_g(A[0],A[1],A[2],47))
-    #     print('integration over line '+str(i) )
-    # print('number1',intensity_list_LOS[7])
-    # return intensity_list_LOS
-
-
-
-
-
-
-
+#integration_with_interval(example_g,list_x_CCD1,list_y_CCD1,list_z_CCD1,1)
 
 #create empty array : arr = np.array([])
