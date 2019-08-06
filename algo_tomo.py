@@ -254,47 +254,38 @@ def LOS_creation(listx,listy,listz):
         vector_coord.append(new_vect)
     vector_coord=np.array(vector_coord)
     return vector_coord
-
-#what we could call the main
-
-#creation of the 3 CCD at the good place in space
-CCD_1,CCD_2,CCD_3=creation_of_3D_sensor_in_space(function_creation(4,4,2))
-
-#preparing the plot
-fig = plt.figure()
-ax = fig.add_subplot(1,2,1, projection='3d')
-ax.set_xlabel('x')
-ax.set_ylabel('y')
-ax.set_zlabel('z')
-
-#call function for plot+show
-draw_cylinder(100)
-list_x_CCD3, list_y_CCD3,list_z_CCD3,list_x_CCD2,list_y_CCD2,list_z_CCD2,list_x_CCD1,list_y_CCD1,list_z_CCD1=lists_for_LOS_draw(CCD_1,CCD_2,CCD_3)
-plt.show()
-
 #function to have a scalar corresponding to the intensity over a line of sight (los)
-def example_g(x,y,z,radius):
+def example_g(x,y,z,radius=47):
     if np.sqrt(x**2+y**2)>radius:
         g=1
     else:
         g=1
     return g
+def integration_LOS(function_g,listx,listy,listz):
+    """Function that integrates the intensity of each point of a given line
+    of sight
 
+    Parameters
+    ----------
+    function_g: the fucntion of density of plasma. It itself takes 3 Parameters
+    that are coordinate x,y,z and this function return the intensity in that
+    point
+    listx: a list of all the x coordinates for all the points
+    listy, listz: same as listx
+    These lists are used for LOS_creation inside of the function
 
+    Returns
+    -------
+    intensity_list_LOS: a list of integers value of the intensity in each points
+    of coordinates (x,y,z)
+    example : intensity_list_LOS[A][B] with A being the number of the LOS in
+    the CCD we chose and [B] being the number of the point in this line. This
+    will return the intensity of point number B
 
-
-#I need to use each coordinate [x,y,z] of vector_coord inside of function_g
-#to each g([x,y,z]) , it correspond a scalar value of intensity of the plasma
-#then in my function integration I need to add this scalar with g[x,y,z] of the following point in my LOS_creation
-# as there are 10 points [x,y,z] in each LOS the integration of ONE LOS will be a sum of 10 values
-#then the function integration (or another function using it) will need to do the same sum on another LOS_creation
-#example: sum on LOS_creation(list_x_CCD1[0],list_y_CCD1[0],list_z_CCD1[0]) has to be followed by :
-#LOS_creation(list_x_CCD1[1],list_y_CCD1[1],list_z_CCD1[1]) and this until the final index (number of LOS in one CCD)
-#then the same for the two other CCD
-
-
-#function that integrates on each point of the line, but it's a problem if the LOS is only defined by 2 points
-def integration_no_interval_CCD(function_g,listx,listy,listz):
+    remember_coord: a list of coordinates for each point of each LOS
+    example : remember_coord[A][B] (see above) will return the (x,y,z)
+    coordinate of point number B in LOS number A
+    """
     intensity_list_LOS = defaultdict(list)
     remember_coord=defaultdict(list)
 
@@ -305,22 +296,23 @@ def integration_no_interval_CCD(function_g,listx,listy,listz):
         dist_y=(vector_ref_end[1]-vector_ref_begining[1])**2
         dist_z=(vector_ref_end[2]-vector_ref_begining[2])**2
         length_of_line = np.sqrt(dist_x+dist_y+dist_z)
-        print('length', length_of_line)
         interval_dl= length_of_line/number_of_points_per_line
 
         for n in range(0,number_of_points_per_line):
             A=LOS_creation(listx[i],listy[i],listz[i])[n]
-            intensity_list_LOS[i].append(function_g(A[0],A[1],A[2],47)*interval_dl)
+            intensity_list_LOS[i].append(function_g(A[0],A[1],A[2])*interval_dl)
             remember_coord[i].append({'x':A[0], 'y':A[1], 'z':A[2]})
+    return intensity_list_LOS, remember_coord
+def example_of_use_of_integration():
+    """Function that shows what can the function integration_LOS do
+    Has to be called in a print
+    """
+    intensity_list_LOS, remember_coord=integration_LOS(example_g,list_x_CCD1,list_y_CCD1,list_z_CCD1)
     print('coordinate of the point number 1 in the line number 6 of the CCD1',remember_coord[6][0])
     print('coordinate of the last point in the line number 6 of the CCD1',remember_coord[6][-1])
     print('intensity of that point 1', intensity_list_LOS[6][0])
-    print('value of the integral along line number 6', np.sum(intensity_list_LOS[6]))
-    return intensity_list_LOS, remember_coord
-
-
-integration_no_interval_CCD(example_g,list_x_CCD1,list_y_CCD1,list_z_CCD1)
-
+    print('value of the integral along line number 6', np.sum(intensity_list_LOS[6]))#what we could call the main
+#function not working NOW , on its way to work one day
 def integration_with_interval(function_g,listx,listy,listz,interval_size):
     intensity_list_LOS = defaultdict(list)
     print('length inside',len(listx))
@@ -371,6 +363,23 @@ def integration_with_interval(function_g,listx,listy,listz,interval_size):
     print('value of the integral along line number 6', np.sum(intensity_list_LOS[6]))
     return intensity_list_LOS,remember_coord
 
+
+
+#creation of the 3 CCD at the good place in space
+CCD_1,CCD_2,CCD_3=creation_of_3D_sensor_in_space(function_creation(4,4,2))
+
+#preparing the plot
+fig = plt.figure()
+ax = fig.add_subplot(1,2,1, projection='3d')
+ax.set_xlabel('x')
+ax.set_ylabel('y')
+ax.set_zlabel('z')
+
+#call function for plot+show
+draw_cylinder(100)
+list_x_CCD3, list_y_CCD3,list_z_CCD3,list_x_CCD2,list_y_CCD2,list_z_CCD2,list_x_CCD1,list_y_CCD1,list_z_CCD1=lists_for_LOS_draw(CCD_1,CCD_2,CCD_3)
+plt.show()
+print(example_of_use_of_integration())
 
 
 #integration_with_interval(example_g,list_x_CCD1,list_y_CCD1,list_z_CCD1,1)
