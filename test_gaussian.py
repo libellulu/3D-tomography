@@ -1,38 +1,90 @@
 import numpy as np
-from scipy.stats import multivariate_normal
 import matplotlib.pyplot as plt
-from mpl_toolkits import mplot3d
-from math import sqrt
-import pandas as pd
-from mpl_toolkits.mplot3d import Axes3D
 
-fig = plt.figure()
-ax = fig.add_subplot(1,2,1, projection='3d')
-ax.set_xlabel('x')
-ax.set_ylabel('y')
-ax.set_zlabel('z')
 
-x, y = np.mgrid[-1.0:1.0:30j, -1.0:1.0:30j]
-# Need an (N, 2) array of (x, y) pairs.
-xy = np.column_stack([x.flat, y.flat])
+def gaussian_zz_cone(x, y, z,
+                     base_1, base_2, mu_x_1, mu_x_2, mu_y_1, mu_y_2, sigma_x_1, sigma_x_2, sigma_y_1, sigma_y_2):
+    """Scalar field of gaussian distributions in the xy plane overlapping in the zz direction. Like a cone.
+    The cone is defined by its two bases, `base_1` and `base_2`.
+    Base one has center (`mu_x_1`, `mu_y_1`) and standard deviation (`sigma_x_1`, `sigma_y_1`).
+    The same goes for base two.
+    The center and standard deviation of each distribution change linearly from one base to the other
 
-mu = np.array([0.0, 0.0])
+    Parameters
+    ----------
+    x, y, z: float
+        Point at which the scalar field is computed.
+    base_1, base_2: float
+        Z-coordinate of base one and two respectively
+    mu_x_1, mu_x_2: float
+        X-coordinate of the center of base one and two.
+    mu_y_1, mu_y_2: float
+        Y-coordinate of the center of base one and two.
+    sigma_x_1, sigma_x_2: float
+        Standard deviation in xx for bases one and two.
+    sigma_y_1, sigma_y_2: float
+        Standard deviation in yy for bases one and two.
+    """
 
-sigma = np.array([.025, .025])
-covariance = np.diag(sigma**2)
+    # mu_x changes linearly between mu_x_1 and mu_x_2
+    k = (mu_x_2 - mu_x_1) / (base_2 - base_1)
+    b = mu_x_1 - k * base_1
+    mu_x = k * z + b
 
-z = multivariate_normal.pdf(xy, mean=mu, cov=covariance)
+    # mu_y changes linearly between mu_y_1 and mu_y_2
+    k = (mu_y_2 - mu_y_1) / (base_2 - base_1)
+    b = mu_y_1 - k * base_1
+    mu_y = k * z + b
 
-# Reshape back to a (30, 30) grid.
-z = z.reshape(x.shape)
+    # sigma_x changes linearly between sigma_x_1 and sigma_x_2
+    k = (sigma_x_2 - sigma_x_1) / (base_2 - base_1)
+    b = sigma_x_1 - k * base_1
+    sigma_x = k * z + b
 
-#plt.plot(x,y)
-#plt.plot(y,z)
-#plt.show()
+    # sigma_y changes linearly between sigma_y_1 and sigma_y_2
+    k = (sigma_y_2 - sigma_y_1) / (base_2 - base_1)
+    b = sigma_y_1 - k * base_1
+    sigma_y = k * z + b
 
-def synthetic_plasma_profile(sig,xcenter,ycenter,zcenter):
-    N=1/((2*np.pi)**(3/2)*sig**3)
-    x=np.linspace(0,10,10)
-    y=np.linspace(0,10,10)
-    z=np.linspace(0,10,10)
-    g_of_xyz=N*np.exp(((x-xcenter)**2+(y-ycenter)**2+(z-zcenter)**2)/(2*sig**2))
+    n_x = 1. / np.sqrt( 2 * np.pi * sigma_x ** 2)
+    n_y = 1. / np.sqrt( 2 * np.pi * sigma_y ** 2)
+
+    g = n_x * n_y * np.exp( - (x - mu_x) ** 2 / sigma_x ** 2 - (y - mu_y) ** 2 / sigma_y ** 2)
+
+    return g
+
+
+# Test plot --------------------------------------------
+# In this example the distribution starts in the center,
+# and then moves to the top right corner while shrinking
+
+x_min, x_max = (-4, 4)
+y_min, y_max = (-8, 8)
+z_min, z_max = (0, 3)
+
+x_points, y_points, z_points = (50, 100, 4)
+
+x_array = np.linspace(x_min, x_max, x_points)
+y_array = np.linspace(y_max, y_min, y_points)
+z_array = np.linspace(z_min, z_max, z_points)
+
+scalar_field_coordinates = np.meshgrid(z_array, y_array, x_array, indexing='ij')
+
+scalar_field_values = gaussian_zz_cone(x=scalar_field_coordinates[2].flatten(),
+                                       y=scalar_field_coordinates[1].flatten(),
+                                       z=scalar_field_coordinates[0].flatten(),
+                                       base_1=0, base_2=3,
+                                       mu_x_1=0, mu_x_2=2,
+                                       mu_y_1=0, mu_y_2=4,
+                                       sigma_x_1=2, sigma_x_2=0.5,
+                                       sigma_y_1=2, sigma_y_2=0.5)
+
+scalar_field_values = scalar_field_values.reshape((z_points, y_points, x_points))
+
+fig, axes = plt.subplots(1, len(scalar_field_values))
+
+for ax, cross_section in zip(axes, scalar_field_values):
+    ax.imshow(cross_section)
+
+plt.show()
+
