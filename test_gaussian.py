@@ -26,6 +26,13 @@ z = multivariate_normal.pdf(xy, mean=mu, cov=covariance)
 # Reshape back to a (30, 30) grid.
 z = z.reshape(x.shape)
 
-plt.plot(x,y)
-plt.plot(y,z)
-plt.show()
+#plt.plot(x,y)
+#plt.plot(y,z)
+#plt.show()
+
+def synthetic_plasma_profile(sig,xcenter,ycenter,zcenter):
+    N=1/((2*np.pi)**(3/2)*sig**3)
+    x=np.linspace(0,10,10)
+    y=np.linspace(0,10,10)
+    z=np.linspace(0,10,10)
+    g_of_xyz=N*np.exp(((x-xcenter)**2+(y-ycenter)**2+(z-zcenter)**2)/(2*sig**2))
