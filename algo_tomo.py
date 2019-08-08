@@ -14,6 +14,7 @@ import pandas as pd
 from mpl_toolkits.mplot3d import Axes3D
 from scipy.linalg import norm
 from collections import defaultdict
+import geometry as geo
 
 """We begin here by the parameter used in the function of this program
 these parameter are following the real values used in ISTTOK on the setup of
@@ -33,8 +34,10 @@ Pinhole_coord2=[109,0,0]
 Pinhole_coord3=[5+102*np.cos(-np.pi*82.5/180),102*np.sin(-np.pi*82.5/180),0]
 
 #create a line of point to use for the creation of the Line of sight
-number_of_points_per_line=100
-t=np.linspace(0,15,number_of_points_per_line)
+number_of_points_per_line=10
+t=np.linspace(0,25,number_of_points_per_line)
+
+radius_tokamak=100
 
 
 def function_creation(nb_x, nb_z , spacing,y=0):
@@ -110,7 +113,6 @@ def creation_of_3D_sensor_in_space(matrix_already_done):
     These coordinates are the ones of the cells of the matrix.
     """
     #creation of 3 copies of the original matrix to use after
-    print('mat',matrix_already_done)
     new = matrix_already_done.copy()
     new_2=matrix_already_done.copy()
     new_forCCD3=matrix_already_done.copy()
@@ -137,8 +139,8 @@ def creation_of_3D_sensor_in_space(matrix_already_done):
     rotate_coordinate=np.dot(rotation_matrix,new_forCCD3.T).T
 
     CCD_3=offset_pinhole_and_array(rotate_coordinate,Pinhole_coord3,PDarray_to_pinhole3)
-    print(CCD_1,CCD_2,CCD_3)
     return CCD_1,CCD_2,CCD_3
+
 def lists_for_LOS_draw(CCD_1,CCD_2,CCD_3):
     """Function that we use to draw the cones of tomography.
     It calculates list of x points, of y , and of z, that are used to draw
@@ -178,6 +180,7 @@ def lists_for_LOS_draw(CCD_1,CCD_2,CCD_3):
         list_z_CCD1.append(z_vector)
         ax.plot(x_vector,y_vector,z_vector,c='red')
 
+
     for detector_2 in CCD_2:
         #print('detectors2:', detector_2)
         x_vector_2=(detector_2[0]+t*(Pinhole_coord2[0]-detector_2[0]))
@@ -198,7 +201,57 @@ def lists_for_LOS_draw(CCD_1,CCD_2,CCD_3):
 
         ax.plot(x_vector_3,y_vector_3,z_vector_3,c='green')
     return list_x_CCD3,list_y_CCD3,list_z_CCD3,list_x_CCD2,list_y_CCD2,list_z_CCD2,list_x_CCD1,list_y_CCD1,list_z_CCD1
-def draw_cylinder(radius=100):
+
+def find_furthest_z(listx,listy,listz):
+    list_new_z_a=[]
+
+    for i in range(0,len(listx)):
+        # print('nouveau')
+        # print('i=', i)
+        # print('ma liste', listx[i])
+        # print('length of list i', len(listx[i]))
+        # print('list i de 2', listx[i][2])
+        for n in range (0, len(listx[i])):
+            new_z_a=listz[i][n][np.sqrt(listx[i][n]**2+listy[i][n]**2)<100]
+            if new_z_a.size >0:
+                list_new_z_a.append(new_z_a)
+    maxx=np.max(list_new_z_a)
+
+    return maxx
+def max_z_among_all_CCD(listx1,listy1,listz1,listx2,listy2,listz2,listx3,listy3,listz3):
+    max_for_CCD1=find_furthest_z(listx1,listy1,listz1)
+    max_for_CCD2=find_furthest_z(listx2,listy2,listz2)
+    max_for_CCD3=find_furthest_z(listx3,listy3,listz3)
+
+    if max_for_CCD1>max_for_CCD2:
+        supermax=max_for_CCD1
+    else:
+        supermax=max_for_CCD2
+        if max_for_CCD3>supermax:
+            supermax=max_for_CCD3
+
+    return supermax
+def voxel_creation(max_found,nb_voxel_x, nb_voxel_y,nb_voxel_z,radius_tokamak):
+    voxellist=[]
+    discr_of_x= np.linspace(-radius_tokamak,radius_tokamak,nb_voxel_x+1)
+    discr_of_y= np.linspace(-radius_tokamak,radius_tokamak,nb_voxel_y+1)
+    discr_of_z= np.linspace(-max_found,max_found,nb_voxel_z+1)
+    z0=discr_of_z[0]
+    x0=discr_of_x[0]
+    y0=discr_of_y[0]
+    for z in discr_of_z[1:]:
+        for y in discr_of_y[1:]:
+            for x in discr_of_z[1:]:
+                voxellist.append(geo.Voxel(x0,y0,z0,x,y,z))
+                x0=x.copy()
+            x0=discr_of_x[0]
+            y0=y.copy()
+        y0=discr_of_y[0]
+        z0=z.copy()
+
+    return voxellist
+
+def draw_cylinder(radius_tokamak):
 
     """Function that will plot the cylinder representing the vessel
     This function has to be called in a plt.show()
@@ -209,7 +262,7 @@ def draw_cylinder(radius=100):
     #axis and radius
     p0 = np.array([-20, 0, 0])
     p1 = np.array([20, 0, 0])
-    R = radius
+    R = radius_tokamak
     #vector in direction of axis
     v = p1 - p0
     #find magnitude of vector
@@ -373,8 +426,6 @@ def integration_with_interval(function_g,listx,listy,listz,interval_size):
     print('value of the integral along line number 6', np.sum(intensity_list_LOS[6]))
     return intensity_list_LOS,remember_coord
 
-
-
 #creation of the 3 CCD at the good place in space
 CCD_1,CCD_2,CCD_3=creation_of_3D_sensor_in_space(function_creation(4,4,2))
 
@@ -388,7 +439,13 @@ ax.set_zlabel('z')
 #call function for plot+show
 draw_cylinder(100)
 list_x_CCD3, list_y_CCD3,list_z_CCD3,list_x_CCD2,list_y_CCD2,list_z_CCD2,list_x_CCD1,list_y_CCD1,list_z_CCD1=lists_for_LOS_draw(CCD_1,CCD_2,CCD_3)
-plt.show()
+#plt.show()
+A=max_z_among_all_CCD(list_x_CCD3, list_y_CCD3,list_z_CCD3,list_x_CCD2,list_y_CCD2,list_z_CCD2,list_x_CCD1,list_y_CCD1,list_z_CCD1)
+S=voxel_creation(A,10,10,4,radius_tokamak)
+print('mon s', S[14].start, S[14].end)
+S=voxel_creation(A,10,8,4,radius_tokamak)
+print('mon s', S[14].start, S[14].end)
+
 
 #def synthetic_plasma_profile(sigx,sigy,sigz,xcenter,ycenter,zcenter):
 #    g_of_xyz=np.exp((x-xcenter)**2/(sigx)**2
