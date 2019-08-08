@@ -71,6 +71,7 @@ def function_creation(nb_x, nb_z , spacing,y=0):
             Monarray=[-length/2+x*spacing,y,-length/2+z*spacing]
             final_array.append(Monarray)
     final_array=np.array(final_array)
+    #print(final_array)
 
     return(final_array)
 def offset_pinhole_and_array(matrix, coordinate_pinhole,distance_to_array):
@@ -250,6 +251,28 @@ def voxel_creation(max_found,nb_voxel_x, nb_voxel_y,nb_voxel_z,radius_tokamak):
         z0=z.copy()
 
     return voxellist
+def intersection_all_LOS(matrix_voxel_created,listx,listy,listz):
+
+    """
+    """
+    #first, adaptation of the LOS
+    remember_line=[]
+    remember_intersection=[]
+    for i in range(0,len(listx)):
+        point1=LOS_creation(listx[i],listy[i],listz[i])[0]
+        #print('premier',point1)
+        point2=LOS_creation(listx[i],listy[i],listz[i])[-1]
+        #print('second',point2)
+        line=geo.Line(point1[0],point1[1],point1[2],point2[0],point2[1],point2[2])
+        remember_line.append(line)
+        #now the intersection
+        for n in range(0,len(matrix_voxel_created)):
+            current_voxel=matrix_voxel_created[n]
+            intersection= geo.intersect(current_voxel,line)
+            remember_intersection.append(intersection.length)
+            #print('intersection of the LOS'+str(i)+'with the voxel number'+str(n), intersection.length)
+
+    return remember_intersection
 
 def draw_cylinder(radius_tokamak):
 
@@ -427,7 +450,9 @@ def integration_with_interval(function_g,listx,listy,listz,interval_size):
     return intensity_list_LOS,remember_coord
 
 #creation of the 3 CCD at the good place in space
-CCD_1,CCD_2,CCD_3=creation_of_3D_sensor_in_space(function_creation(4,4,2))
+nb_cell_x=4
+nb_cell_y=4
+CCD_1,CCD_2,CCD_3=creation_of_3D_sensor_in_space(function_creation(nb_cell_x,nb_cell_y,2))
 
 #preparing the plot
 fig = plt.figure()
@@ -441,17 +466,18 @@ draw_cylinder(100)
 list_x_CCD3, list_y_CCD3,list_z_CCD3,list_x_CCD2,list_y_CCD2,list_z_CCD2,list_x_CCD1,list_y_CCD1,list_z_CCD1=lists_for_LOS_draw(CCD_1,CCD_2,CCD_3)
 #plt.show()
 A=max_z_among_all_CCD(list_x_CCD3, list_y_CCD3,list_z_CCD3,list_x_CCD2,list_y_CCD2,list_z_CCD2,list_x_CCD1,list_y_CCD1,list_z_CCD1)
-S=voxel_creation(A,10,10,4,radius_tokamak)
-print('mon s', S[14].start, S[14].end)
-S=voxel_creation(A,10,8,4,radius_tokamak)
-print('mon s', S[14].start, S[14].end)
 
+nb_voxel_x=2
+nb_voxel_y=2
+nb_voxel_z=2
 
-#def synthetic_plasma_profile(sigx,sigy,sigz,xcenter,ycenter,zcenter):
-#    g_of_xyz=np.exp((x-xcenter)**2/(sigx)**2
-#    return 0
+S=voxel_creation(A,nb_voxel_x,nb_voxel_y,nb_voxel_z,radius_tokamak)
 
-
-#integration_with_interval(example_g,list_x_CCD1,list_y_CCD1,list_z_CCD1,1)
+list_of_intersection=[]
+list_of_intersection.append(intersection_all_LOS(S,list_x_CCD1,list_y_CCD1,list_z_CCD1))
+list_of_intersection.append(intersection_all_LOS(S,list_x_CCD2,list_y_CCD2,list_z_CCD2))
+list_of_intersection.append(intersection_all_LOS(S,list_x_CCD3,list_y_CCD3,list_z_CCD3))
+projections=np.array(list_of_intersection).flatten().reshape((nb_cell_x*nb_cell_y*3,nb_voxel_z,nb_voxel_y,nb_voxel_x))
+np.save('projections.npy',projections)
 
 #create empty array : arr = np.array([])
