@@ -22,21 +22,22 @@ the good use of the functions
 """
 
 #position of the array of detectors (meaning the CCD) in the current setup
-PDarray_position1=[0,0,106]
-PDarray_position2=[0,118,0]
-PDarray_position3=[0,5+115*np.cos(-np.pi*82.5/180),115*np.sin(-np.pi*82.5/180)]
+#actually the distance is pinhole to the array and not the reverse
+PDarray_to_pinhole1=[0,9,0]
+PDarray_to_pinhole2=[9,0,0]
+PDarray_to_pinhole3=[13*np.cos(-np.pi*82.5/180),13*np.sin(-np.pi*82.5/180),0]
 
 #position of the pinholes of each cameras
-Pinhole_coord1=[0,0,97]
-Pinhole_coord2=[0,109,0]
-Pinhole_coord3=[0,5+102*np.cos(-np.pi*82.5/180),102*np.sin(-np.pi*82.5/180)]
+Pinhole_coord1=[0,97,0]
+Pinhole_coord2=[109,0,0]
+Pinhole_coord3=[5+102*np.cos(-np.pi*82.5/180),102*np.sin(-np.pi*82.5/180),0]
 
 #create a line of point to use for the creation of the Line of sight
 number_of_points_per_line=100
 t=np.linspace(0,15,number_of_points_per_line)
 
 
-def function_creation(nb_x, nb_y , spacing,z=0):
+def function_creation(nb_x, nb_z , spacing,y=0):
     """This function returns an array that represents a 3D matrix for a new
     tomography sensor.
 
@@ -63,31 +64,33 @@ def function_creation(nb_x, nb_y , spacing,z=0):
 
     for x in range (nb_x):
 
-        for y in range (nb_y):
-            Monarray=[-length/2+x*spacing,-length/2+y*spacing,z]
+        for z in range (nb_z):
+            Monarray=[-length/2+x*spacing,y,-length/2+z*spacing]
             final_array.append(Monarray)
     final_array=np.array(final_array)
 
     return(final_array)
-def offset_pinhole(matrix, coordinate):
+def offset_pinhole_and_array(matrix, coordinate_pinhole,distance_to_array):
     """Function that calculate the new place of the detector in the space
-    The detector is a matricx of coordinate (x,y,z) that are offset through
+    The detector is a matrix of coordinate (x,y,z) that are offset through
     this function
 
     Parameters
     ----------
     matrix : an array of array
     It is the output of function creation , an array of (x,y,z) coordinate
-    coordinates : array
+    coordinates_pinhole : array
     the coordinates [x,y,z] of the point that we offset from.
-    Here we offset from the pinhole coordinates
+    Here we offset from the pinhole coordinates, and we will add to this the
+    distance between the pinhole and the pd array
+    distance_to_array: coordinates [x,y,z]
 
     Return
     ------
     offset_matrix : an array of array
     an array of the new coordinate
     """
-    offset_matrix=matrix+coordinate
+    offset_matrix=matrix+coordinate_pinhole+distance_to_array
     return offset_matrix
 def creation_of_3D_sensor_in_space(matrix_already_done):
     """ Function creating my sensor, the place of those are relative to the
@@ -107,18 +110,22 @@ def creation_of_3D_sensor_in_space(matrix_already_done):
     These coordinates are the ones of the cells of the matrix.
     """
     #creation of 3 copies of the original matrix to use after
+    print('mat',matrix_already_done)
     new = matrix_already_done.copy()
     new_2=matrix_already_done.copy()
     new_forCCD3=matrix_already_done.copy()
 
-    # multiply the coordinates by -1 and exchange value ofaxes y and z to rotate
-    # the second CCD
-    new[:,2]=new_2[:,1]*-1
-    new[:,1]=new_2[:,2]*-1
+    #multiply the coordinates by -1 and exchange value of axes y and x to rotate
+    #the second CCD
+    new[:,1]=new_2[:,0]*-1
+    new[:,0]=new_2[:,1]*-1
     second_matrix=new.copy()
+    # theta2=np.pi/2
+    # rotation_matrix_x=np.array([[1,0,0],[0,np.cos(theta2),np.sin(theta2)*(-1)],[0,np.sin(theta2),np.cos(theta2)]])
+    # second_matrix=np.dot(rotation_matrix_x,new_2.T).T
 
-    CCD_1=offset_pinhole(matrix_already_done,Pinhole_coord1)
-    CCD_2=offset_pinhole(second_matrix,Pinhole_coord2)
+    CCD_1=offset_pinhole_and_array(matrix_already_done,Pinhole_coord1,PDarray_to_pinhole1)
+    CCD_2=offset_pinhole_and_array(second_matrix,Pinhole_coord2,PDarray_to_pinhole2)
 
     theta= (np.pi)*173/180
 
@@ -126,11 +133,11 @@ def creation_of_3D_sensor_in_space(matrix_already_done):
     #of the third camera (called CCD3) in the current setup
 
     #general calcul to make a rotation along x
-    rotation_matrix=np.array([[1,0,0],[0,np.cos(theta),np.sin(theta)],[0,-np.sin(theta),np.cos(theta)]])
+    rotation_matrix=np.array([[np.cos(theta),-np.sin(theta),0],[np.sin(theta),np.cos(theta),0],[0,0,1]])
     rotate_coordinate=np.dot(rotation_matrix,new_forCCD3.T).T
 
-    CCD_3=offset_pinhole(rotate_coordinate,Pinhole_coord3)
-
+    CCD_3=offset_pinhole_and_array(rotate_coordinate,Pinhole_coord3,PDarray_to_pinhole3)
+    print(CCD_1,CCD_2,CCD_3)
     return CCD_1,CCD_2,CCD_3
 def lists_for_LOS_draw(CCD_1,CCD_2,CCD_3):
     """Function that we use to draw the cones of tomography.
@@ -163,9 +170,9 @@ def lists_for_LOS_draw(CCD_1,CCD_2,CCD_3):
     list_z_CCD3=[]
     for detector in CCD_1:
         #print('detectors:', detector)
-        x_vector=-(PDarray_position1[0]+t*(detector[0]-PDarray_position1[0]))
-        y_vector=-(PDarray_position1[1]+t*(detector[1]-PDarray_position1[1]))
-        z_vector=(PDarray_position1[2]+t*(detector[2]-PDarray_position1[2]))
+        x_vector=(detector[0]+t*(Pinhole_coord1[0]-detector[0]))
+        y_vector=(detector[1]+t*(Pinhole_coord1[1]-detector[1]))
+        z_vector=(detector[2]+t*(Pinhole_coord1[2]-detector[2]))
         list_y_CCD1.append(y_vector)
         list_x_CCD1.append(x_vector)
         list_z_CCD1.append(z_vector)
@@ -173,18 +180,18 @@ def lists_for_LOS_draw(CCD_1,CCD_2,CCD_3):
 
     for detector_2 in CCD_2:
         #print('detectors2:', detector_2)
-        x_vector_2=-(PDarray_position2[0]+t*(detector_2[0]-PDarray_position2[0]))
-        y_vector_2=(PDarray_position2[1]+t*(detector_2[1]-PDarray_position2[1]))
-        z_vector_2=-(PDarray_position2[2]+t*(detector_2[2]-PDarray_position2[2]))
+        x_vector_2=(detector_2[0]+t*(Pinhole_coord2[0]-detector_2[0]))
+        y_vector_2=(detector_2[1]+t*(Pinhole_coord2[1]-detector_2[1]))
+        z_vector_2=(detector_2[2]+t*(Pinhole_coord2[2]-detector_2[2]))
         list_y_CCD2.append(y_vector_2)
         list_x_CCD2.append(x_vector_2)
         list_z_CCD2.append(z_vector_2)
         ax.plot(x_vector_2,y_vector_2,z_vector_2)
 
     for detector_3 in CCD_3:
-        x_vector_3=(PDarray_position3[0]+t*(detector_3[0]-PDarray_position3[0]))
-        y_vector_3=(PDarray_position3[1]+t*(detector_3[1]-PDarray_position3[1]))
-        z_vector_3=(PDarray_position3[2]+t*(detector_3[2]-PDarray_position3[2]))
+        x_vector_3=(detector_3[0]+t*(Pinhole_coord3[0]-detector_3[0]))
+        y_vector_3=(detector_3[1]+t*(Pinhole_coord3[1]-detector_3[1]))
+        z_vector_3=(detector_3[2]+t*(Pinhole_coord3[2]-detector_3[2]))
         list_y_CCD3.append(y_vector_3)
         list_x_CCD3.append(x_vector_3)
         list_z_CCD3.append(z_vector_3)
@@ -200,8 +207,8 @@ def draw_cylinder(radius=100):
     """
     origin = np.array([0, 0, 0])
     #axis and radius
-    p0 = np.array([-50, 0, 0])
-    p1 = np.array([50, 0, 0])
+    p0 = np.array([-20, 0, 0])
+    p1 = np.array([20, 0, 0])
     R = radius
     #vector in direction of axis
     v = p1 - p0
@@ -225,7 +232,7 @@ def draw_cylinder(radius=100):
     #use meshgrid to make 2d arrays
     t, theta = np.meshgrid(t, theta)
     #generate coordinates for surface
-    X, Y, Z = [p0[i] + v[i] * t + R * np.sin(theta) * n1[i] + R * np.cos(theta) * n2[i] for i in [0, 1, 2]]
+    Z, X, Y = [p0[i] + v[i] * t + R * np.sin(theta) * n1[i] + R * np.cos(theta) * n2[i] for i in [0, 1, 2]]
     ax.plot_surface(X, Y, Z,color='plum')
 
     return X,Y,Z
@@ -246,6 +253,9 @@ def LOS_creation(listx,listy,listz):
         This list has size [LOS* npoints *3]. LOS is the number of lines of
         sight. npoint , the number of point per LOS. 3 corresponds to
         coordinate [x,y,z]
+    example : LOS_creation(list_x_CCD1[5], list_y_CCD1[5],list_z_CCD1[5])will
+    return a array of all the point and their coordinate [x,y,z] constituting
+    the LOS 5 of the CCD1
     """
     vector_coord=[]
     for n in range(0,len(listx)):
@@ -379,7 +389,10 @@ ax.set_zlabel('z')
 draw_cylinder(100)
 list_x_CCD3, list_y_CCD3,list_z_CCD3,list_x_CCD2,list_y_CCD2,list_z_CCD2,list_x_CCD1,list_y_CCD1,list_z_CCD1=lists_for_LOS_draw(CCD_1,CCD_2,CCD_3)
 plt.show()
-print(example_of_use_of_integration())
+
+#def synthetic_plasma_profile(sigx,sigy,sigz,xcenter,ycenter,zcenter):
+#    g_of_xyz=np.exp((x-xcenter)**2/(sigx)**2
+#    return 0
 
 
 #integration_with_interval(example_g,list_x_CCD1,list_y_CCD1,list_z_CCD1,1)
