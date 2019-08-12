@@ -47,11 +47,11 @@ def function_creation(nb_x, nb_z , spacing,y=0):
     Parameters
     ----------
     nb_x : integer
-    number of line in x to make a x*y grid for the sensor.
-    The same goes for nb_y
+    number of line in x to make a x*z grid for the sensor.
+    The same goes for nb_z
     spacing : integer
     The space between the centers of two cell, the size of the cell
-    z: integer
+    y: integer
     originally height distance between pinhole and PD array. Has been fixed to
     zero because of further calculation and offset specific to each CCD
 
@@ -87,7 +87,7 @@ def offset_pinhole_and_array(matrix, coordinate_pinhole,distance_to_array):
     the coordinates [x,y,z] of the point that we offset from.
     Here we offset from the pinhole coordinates, and we will add to this the
     distance between the pinhole and the pd array
-    distance_to_array: coordinates [x,y,z]
+    distance_to_array: coordinates [x,y,z], contributes to the offset
 
     Return
     ------
@@ -204,6 +204,20 @@ def lists_for_LOS_draw(CCD_1,CCD_2,CCD_3):
     return list_x_CCD3,list_y_CCD3,list_z_CCD3,list_x_CCD2,list_y_CCD2,list_z_CCD2,list_x_CCD1,list_y_CCD1,list_z_CCD1
 
 def find_furthest_z(listx,listy,listz):
+    """Function that finds the furthest point in z among the LOS of one CCDs.
+
+    Parameters
+    ----------
+    listx : list of integer
+    the list of x coordinatesof all the points constituting all the LOS
+    of one CCD. The return of the lists_for_LOS_draw functions
+    listy, listz : idem in the other axes
+
+    Returns
+    -------
+    maxx : integer
+    the furthest point in the space in the z direction
+    """
     list_new_z_a=[]
 
     for i in range(0,len(listx)):
@@ -220,6 +234,22 @@ def find_furthest_z(listx,listy,listz):
 
     return maxx
 def max_z_among_all_CCD(listx1,listy1,listz1,listx2,listy2,listz2,listx3,listy3,listz3):
+    """Function that returns the furthest point in the z axes among all the LOS
+     of all the CCD.
+
+     Parameters
+     ----------
+     listx1 : list of integer
+     list of the x coordinates of all the points constituting the
+     several LOS of CCD1.
+     listy1, listz1 : idem in the other axes
+     listx2,listx,3: idem for the two other CCD
+
+     returns
+     -------
+     supermax : integer
+     the furthest z point among all CCD
+    """
     max_for_CCD1=find_furthest_z(listx1,listy1,listz1)
     max_for_CCD2=find_furthest_z(listx2,listy2,listz2)
     max_for_CCD3=find_furthest_z(listx3,listy3,listz3)
@@ -233,6 +263,27 @@ def max_z_among_all_CCD(listx1,listy1,listz1,listx2,listy2,listz2,listx3,listy3,
 
     return supermax
 def voxel_creation(max_found,nb_voxel_x, nb_voxel_y,nb_voxel_z,radius_tokamak):
+    """Function that discretize the space in voxel . The space in the one where
+    LOS are present inside of the vessel.
+
+    Parameters
+    ----------
+    max_found : integer
+    the coordinates z of the furthest point in the z axes among all
+    LOS in all CCD. Return of the function max_z_among_all_CCD.
+    nb_voxel_x :integer
+    number of voxel in the x axes
+    same for nb_voxel_y and z
+    radius_tokamak:integer
+    the radius specified in the beginning of the program
+
+    returns
+    -------
+    voxellist: list of the type geo.voxel. Can display only begining and end
+    with "name of the voxel".start or .end
+    list of voxel discretising the space
+
+    """
     voxellist=[]
     discr_of_x= np.linspace(-radius_tokamak,radius_tokamak,nb_voxel_x+1)
     discr_of_y= np.linspace(-radius_tokamak,radius_tokamak,nb_voxel_y+1)
@@ -479,5 +530,3 @@ list_of_intersection.append(intersection_all_LOS(S,list_x_CCD2,list_y_CCD2,list_
 list_of_intersection.append(intersection_all_LOS(S,list_x_CCD3,list_y_CCD3,list_z_CCD3))
 projections=np.array(list_of_intersection).flatten().reshape((nb_cell_x*nb_cell_y*3,nb_voxel_z,nb_voxel_y,nb_voxel_x))
 np.save('projections.npy',projections)
-
-#create empty array : arr = np.array([])
