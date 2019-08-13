@@ -29,9 +29,9 @@ PDarray_to_pinhole2=[9,0,0]
 PDarray_to_pinhole3=[13*np.cos(-np.pi*82.5/180),13*np.sin(-np.pi*82.5/180),0]
 
 #position of the pinholes of each cameras
-Pinhole_coord1=[0,97,0]
+Pinhole_coord1=[5,97,0]
 Pinhole_coord2=[109,0,0]
-Pinhole_coord3=[5+102*np.cos(-np.pi*82.5/180),102*np.sin(-np.pi*82.5/180),0]
+Pinhole_coord3=[5+102*np.cos(-np.pi*82.5/180), 102*np.sin(-np.pi*82.5/180),0]
 
 #create a line of point to use for the creation of the Line of sight
 number_of_points_per_line=10
@@ -40,7 +40,7 @@ t=np.linspace(0,25,number_of_points_per_line)
 radius_tokamak=100
 
 
-def function_creation(nb_x, nb_z , spacing,y=0):
+def function_creation(nb_x, nb_z , spacing_x, spacing_z, y=0):
     """This function returns an array that represents a 3D matrix for a new
     tomography sensor.
 
@@ -62,18 +62,20 @@ def function_creation(nb_x, nb_z , spacing,y=0):
     coordinates. This coordinates are the ones of the cells of the matrix.
     """
 
-    final_array=[]
-    length=(nb_x-1)*spacing
+    final_array = []
+    length_x = (nb_x-1) * spacing_x
+    length_z = (nb_z-1) * spacing_z
 
-    for x in range (nb_x):
-
-        for z in range (nb_z):
-            Monarray=[-length/2+x*spacing,y,-length/2+z*spacing]
+    for x in range(nb_x):
+        for z in range(nb_z):
+            Monarray=[-length_x/2+x*spacing_x, y, -length_z/2 + z*spacing_z]
             final_array.append(Monarray)
     final_array=np.array(final_array)
-    #print(final_array)
+    print(final_array)
 
     return(final_array)
+
+
 def offset_pinhole_and_array(matrix, coordinate_pinhole,distance_to_array):
     """Function that calculate the new place of the detector in the space
     The detector is a matrix of coordinate (x,y,z) that are offset through
@@ -96,6 +98,8 @@ def offset_pinhole_and_array(matrix, coordinate_pinhole,distance_to_array):
     """
     offset_matrix=matrix+coordinate_pinhole+distance_to_array
     return offset_matrix
+
+
 def creation_of_3D_sensor_in_space(matrix_already_done):
     """ Function creating my sensor, the place of those are relative to the
     center 0,0,0 of the vessel
@@ -130,7 +134,7 @@ def creation_of_3D_sensor_in_space(matrix_already_done):
     CCD_1=offset_pinhole_and_array(matrix_already_done,Pinhole_coord1,PDarray_to_pinhole1)
     CCD_2=offset_pinhole_and_array(second_matrix,Pinhole_coord2,PDarray_to_pinhole2)
 
-    theta= (np.pi)*173/180
+    theta= -(np.pi)*172.5/180
 
     #Computation with formula of a rotation on the axis x of the place and angle
     #of the third camera (called CCD3) in the current setup
@@ -142,7 +146,8 @@ def creation_of_3D_sensor_in_space(matrix_already_done):
     CCD_3=offset_pinhole_and_array(rotate_coordinate,Pinhole_coord3,PDarray_to_pinhole3)
     return CCD_1,CCD_2,CCD_3
 
-def lists_for_LOS_draw(CCD_1,CCD_2,CCD_3):
+
+def lists_for_LOS_draw(CCD_1, CCD_2, CCD_3, plot_list=[]):
     """Function that we use to draw the cones of tomography.
     It calculates list of x points, of y , and of z, that are used to draw
     the lines of sight, and will also remember them in a list.
@@ -179,7 +184,8 @@ def lists_for_LOS_draw(CCD_1,CCD_2,CCD_3):
         list_y_CCD1.append(y_vector)
         list_x_CCD1.append(x_vector)
         list_z_CCD1.append(z_vector)
-        ax.plot(x_vector,y_vector,z_vector,c='red')
+        if 'CCD1' in plot_list:
+            ax.plot(x_vector,y_vector,z_vector,c='red')
 
 
     for detector_2 in CCD_2:
@@ -190,18 +196,27 @@ def lists_for_LOS_draw(CCD_1,CCD_2,CCD_3):
         list_y_CCD2.append(y_vector_2)
         list_x_CCD2.append(x_vector_2)
         list_z_CCD2.append(z_vector_2)
-        ax.plot(x_vector_2,y_vector_2,z_vector_2)
+        if 'CCD2' in plot_list:
+            ax.plot(x_vector_2,y_vector_2,z_vector_2)
 
     for detector_3 in CCD_3:
         x_vector_3=(detector_3[0]+t*(Pinhole_coord3[0]-detector_3[0]))
         y_vector_3=(detector_3[1]+t*(Pinhole_coord3[1]-detector_3[1]))
         z_vector_3=(detector_3[2]+t*(Pinhole_coord3[2]-detector_3[2]))
-        list_y_CCD3.append(y_vector_3)
         list_x_CCD3.append(x_vector_3)
+        list_y_CCD3.append(y_vector_3)
         list_z_CCD3.append(z_vector_3)
+        if 'CCD3' in plot_list:
+            ax.plot(x_vector_3,y_vector_3,z_vector_3)
 
-        ax.plot(x_vector_3,y_vector_3,z_vector_3,c='green')
+    plt.ylim((-600, 600))
+    plt.xlim((-600, 600))
+
+    print(np.linalg.norm([list_x_CCD3[0][-1]-list_x_CCD3[0][0],list_y_CCD3[0][-1]-list_y_CCD3[0][0]]))
+    print(np.linalg.norm([list_x_CCD3[-1][-1]-list_x_CCD3[-1][0],list_y_CCD3[-1][-1]-list_y_CCD3[-1][0]]))
+
     return list_x_CCD3,list_y_CCD3,list_z_CCD3,list_x_CCD2,list_y_CCD2,list_z_CCD2,list_x_CCD1,list_y_CCD1,list_z_CCD1
+
 
 def find_furthest_z(listx,listy,listz):
     """Function that finds the furthest point in z among the LOS of one CCDs.
@@ -293,7 +308,7 @@ def voxel_creation(max_found,nb_voxel_x, nb_voxel_y,nb_voxel_z,radius_tokamak):
     y0=discr_of_y[0]
     for z in discr_of_z[1:]:
         for y in discr_of_y[1:]:
-            for x in discr_of_z[1:]:
+            for x in discr_of_x[1:]:
                 voxellist.append(geo.Voxel(x0,y0,z0,x,y,z))
                 x0=x.copy()
             x0=discr_of_x[0]
@@ -501,9 +516,9 @@ def integration_with_interval(function_g,listx,listy,listz,interval_size):
     return intensity_list_LOS,remember_coord
 
 #creation of the 3 CCD at the good place in space
-nb_cell_x=4
-nb_cell_y=4
-CCD_1,CCD_2,CCD_3=creation_of_3D_sensor_in_space(function_creation(nb_cell_x,nb_cell_y,2))
+nb_cell_x=19
+nb_cell_z=1
+CCD_1,CCD_2,CCD_3=creation_of_3D_sensor_in_space(function_creation(nb_cell_x, nb_cell_z, spacing_x=2, spacing_z=2))
 
 #preparing the plot
 fig = plt.figure()
@@ -513,14 +528,14 @@ ax.set_ylabel('y')
 ax.set_zlabel('z')
 
 #call function for plot+show
-draw_cylinder(100)
-list_x_CCD3, list_y_CCD3,list_z_CCD3,list_x_CCD2,list_y_CCD2,list_z_CCD2,list_x_CCD1,list_y_CCD1,list_z_CCD1=lists_for_LOS_draw(CCD_1,CCD_2,CCD_3)
+# draw_cylinder(100)
+list_x_CCD3, list_y_CCD3,list_z_CCD3,list_x_CCD2,list_y_CCD2,list_z_CCD2,list_x_CCD1,list_y_CCD1,list_z_CCD1=lists_for_LOS_draw(CCD_1,CCD_2,CCD_3,plot_list=['CCD1','CCD3'])
 #plt.show()
 A=max_z_among_all_CCD(list_x_CCD3, list_y_CCD3,list_z_CCD3,list_x_CCD2,list_y_CCD2,list_z_CCD2,list_x_CCD1,list_y_CCD1,list_z_CCD1)
 
-nb_voxel_x=2
-nb_voxel_y=2
-nb_voxel_z=2
+nb_voxel_x=20
+nb_voxel_y=20
+nb_voxel_z=3
 
 S=voxel_creation(A,nb_voxel_x,nb_voxel_y,nb_voxel_z,radius_tokamak)
 
@@ -528,5 +543,10 @@ list_of_intersection=[]
 list_of_intersection.append(intersection_all_LOS(S,list_x_CCD1,list_y_CCD1,list_z_CCD1))
 list_of_intersection.append(intersection_all_LOS(S,list_x_CCD2,list_y_CCD2,list_z_CCD2))
 list_of_intersection.append(intersection_all_LOS(S,list_x_CCD3,list_y_CCD3,list_z_CCD3))
-projections=np.array(list_of_intersection).flatten().reshape((nb_cell_x*nb_cell_y*3,nb_voxel_z,nb_voxel_y,nb_voxel_x))
+projections=np.array(list_of_intersection).flatten().reshape((nb_cell_x * nb_cell_z * 3, nb_voxel_z, nb_voxel_y, nb_voxel_x))
 np.save('projections.npy',projections)
+
+# for projection_cube in projections[:nb_cell_x*nb_cell_z]:
+#     fig, axes = plt.subplots(1, len(projection_cube))
+#     for ax, p in zip(axes, projection_cube):
+#         ax.imshow(p)
