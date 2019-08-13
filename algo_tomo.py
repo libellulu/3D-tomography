@@ -207,10 +207,11 @@ def lists_for_LOS_draw(CCD_1, CCD_2, CCD_3, plot_list=[]):
         list_y_CCD3.append(y_vector_3)
         list_z_CCD3.append(z_vector_3)
         if 'CCD3' in plot_list:
-            ax.plot(x_vector_3,y_vector_3,z_vector_3)
+            ax.plot(x_vector_3,y_vector_3,z_vector_3, color='blue')
 
     plt.ylim((-600, 600))
     plt.xlim((-600, 600))
+    ax.set_zlim((-600, 600))
 
     print(np.linalg.norm([list_x_CCD3[0][-1]-list_x_CCD3[0][0],list_y_CCD3[0][-1]-list_y_CCD3[0][0]]))
     print(np.linalg.norm([list_x_CCD3[-1][-1]-list_x_CCD3[-1][0],list_y_CCD3[-1][-1]-list_y_CCD3[-1][0]]))
@@ -301,7 +302,7 @@ def voxel_creation(max_found,nb_voxel_x, nb_voxel_y,nb_voxel_z,radius_tokamak):
     """
     voxellist=[]
     discr_of_x= np.linspace(-radius_tokamak,radius_tokamak,nb_voxel_x+1)
-    discr_of_y= np.linspace(-radius_tokamak,radius_tokamak,nb_voxel_y+1)
+    discr_of_y= np.linspace(radius_tokamak,-radius_tokamak,nb_voxel_y+1)
     discr_of_z= np.linspace(-max_found,max_found,nb_voxel_z+1)
     z0=discr_of_z[0]
     x0=discr_of_x[0]
@@ -516,8 +517,8 @@ def integration_with_interval(function_g,listx,listy,listz,interval_size):
     return intensity_list_LOS,remember_coord
 
 #creation of the 3 CCD at the good place in space
-nb_cell_x=19
-nb_cell_z=1
+nb_cell_x=2
+nb_cell_z=3
 CCD_1,CCD_2,CCD_3=creation_of_3D_sensor_in_space(function_creation(nb_cell_x, nb_cell_z, spacing_x=2, spacing_z=2))
 
 #preparing the plot
@@ -546,7 +547,7 @@ list_of_intersection.append(intersection_all_LOS(S,list_x_CCD3,list_y_CCD3,list_
 projections=np.array(list_of_intersection).flatten().reshape((nb_cell_x * nb_cell_z * 3, nb_voxel_z, nb_voxel_y, nb_voxel_x))
 np.save('projections.npy',projections)
 
-# for projection_cube in projections[:nb_cell_x*nb_cell_z]:
-#     fig, axes = plt.subplots(1, len(projection_cube))
-#     for ax, p in zip(axes, projection_cube):
-#         ax.imshow(p)
+for projection_cube in projections:
+    fig, axes = plt.subplots(1, len(projection_cube))
+    for ax, p in zip(axes, projection_cube):
+        ax.imshow(p)
