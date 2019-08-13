@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from skimage.draw import ellipse
 
 
-def tikhonov(projections, signals, alpha_x, alpha_y, alpha_z, alpha_norm):
+def tikhonov(signals):
     """Apply the Tikhonov regularization algorithm for a given set of measurements from tomography.
 
     input:
@@ -129,7 +129,7 @@ def tikhonov(projections, signals, alpha_x, alpha_y, alpha_z, alpha_norm):
 
     ItIo = np.dot(np.transpose(Io), Io)
 
-    alpha_x = 1e3
+    alpha_x = 1e5
     alpha_y = alpha_x
     alpha_z = alpha_x
 
@@ -153,3 +153,10 @@ def tikhonov(projections, signals, alpha_x, alpha_y, alpha_z, alpha_norm):
     plt.show()
 
     return g
+
+
+signals = np.load("signals.npy")
+g = tikhonov(signals)
+# fig, axes = plt.subplots(1, len(g))
+# for g_cut, ax in zip(g, axes):
+#     ax.imshow(g_cut)

@@ -58,11 +58,11 @@ def gaussian_zz_cone(x, y, z,
 # In this example the distribution starts in the center,
 # and then moves to the top right corner while shrinking
 
-x_min, x_max = (-4, 4)
-y_min, y_max = (-8, 8)
-z_min, z_max = (0, 3)
+x_min, x_max = (-100, 100)
+y_min, y_max = (-100, 100)
+z_min, z_max = (-148, 148)
 
-x_points, y_points, z_points = (50, 100, 4)
+x_points, y_points, z_points = (30, 30, 5)
 
 x_array = np.linspace(x_min, x_max, x_points)
 y_array = np.linspace(y_max, y_min, y_points)
@@ -73,11 +73,11 @@ scalar_field_coordinates = np.meshgrid(z_array, y_array, x_array, indexing='ij')
 scalar_field_values = gaussian_zz_cone(x=scalar_field_coordinates[2].flatten(),
                                        y=scalar_field_coordinates[1].flatten(),
                                        z=scalar_field_coordinates[0].flatten(),
-                                       base_1=0, base_2=3,
-                                       mu_x_1=0, mu_x_2=2,
-                                       mu_y_1=0, mu_y_2=4,
-                                       sigma_x_1=2, sigma_x_2=0.5,
-                                       sigma_y_1=2, sigma_y_2=0.5)
+                                       base_1=-150, base_2=150,
+                                       mu_x_1=0, mu_x_2=0,
+                                       mu_y_1=0, mu_y_2=0,
+                                       sigma_x_1=50, sigma_x_2=15,
+                                       sigma_y_1=50, sigma_y_2=15)
 
 scalar_field_values = scalar_field_values.reshape((z_points, y_points, x_points))
 
@@ -87,4 +87,26 @@ for ax, cross_section in zip(axes, scalar_field_values):
     ax.imshow(cross_section)
 
 plt.show()
+
+# Simulate tomography signals --------------------------------------------------
+
+fname = 'projections.npy'
+print('Reading:', fname)
+projections = np.load(fname)
+
+print('projections:', projections.shape, projections.dtype)
+
+# -------------------------------------------------------------------------
+
+P = projections.reshape((projections.shape[0], -1))
+
+print('P:', P.shape, P.dtype)
+
+signals = np.dot(P, scalar_field_values.flatten())
+
+print('Signals:', signals.shape, signals.dtype)
+
+np.save("signals.npy", signals)
+
+
 
