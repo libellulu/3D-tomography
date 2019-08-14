@@ -96,7 +96,7 @@ def offset_pinhole_and_array(matrix, coordinate_pinhole,distance_to_array):
     """
     offset_matrix=matrix+coordinate_pinhole+distance_to_array
     return offset_matrix
-def creation_of_3D_sensor_in_space(matrix_already_done):
+def creation_of_3D_sensor_in_space(matrix_already_done,Pinhole_coord1=Pinhole_coord1,PDarray_to_pinhole1,Pinhole_coord2,PDarray_to_pinhole2,Pinhole_coord3,PDarray_to_pinhole3):
     """ Function creating my sensor, the place of those are relative to the
     center 0,0,0 of the vessel
     Requires to already have used function_creation previously to have an
@@ -530,9 +530,11 @@ def final_function(nb_cell_x,nb_cell_z,spacing_x,spacing_z,nb_voxel_x,nb_voxel_y
 
     np.save('projections.npy',projections)
     return projections
-projections=final_function(2,2,2,2,8,8,3,100)
-for projection_cube in projections:
-    fig, axes = plt.subplots(1, len(projection_cube))
-    for ax, p in zip(axes, projection_cube):
-        ax.imshow(p)
-plt.show()
+
+projections=final_function(2,2,2,2,15,15,5,100)
+
+# for projection_cube in projections:
+#     fig, axes = plt.subplots(1, len(projection_cube))
+#     for ax, p in zip(axes, projection_cube):
+#         ax.imshow(p)
+# plt.show()
