@@ -154,9 +154,10 @@ def tikhonov(signals):
 
     return g
 
+if __name__ =='__main__':
 
-signals = np.load("signals.npy")
-g = tikhonov(signals)
-# fig, axes = plt.subplots(1, len(g))
-# for g_cut, ax in zip(g, axes):
-#     ax.imshow(g_cut)
+    signals = np.load("signals.npy")
+    g = tikhonov(signals)
+    fig, axes = plt.subplots(1, len(g))
+    for g_cut, ax in zip(g, axes):
+        ax.imshow(g_cut)
