@@ -60,9 +60,8 @@ if __name__ =='__main__':
 
     x_min, x_max = (-100, 100)
     y_min, y_max = (-100, 100)
-    z_min, z_max = (-148, 148)
-
-    x_points, y_points, z_points = (15, 15, 5)
+    z_min, z_max = (-42,42)
+    x_points, y_points, z_points = (20,20,3)
 
     x_array = np.linspace(x_min, x_max, x_points)
     y_array = np.linspace(y_max, y_min, y_points)
@@ -74,10 +73,10 @@ if __name__ =='__main__':
                                            y=scalar_field_coordinates[1].flatten(),
                                            z=scalar_field_coordinates[0].flatten(),
                                            base_1=-150, base_2=150,
-                                           mu_x_1=0, mu_x_2=0,
-                                           mu_y_1=0, mu_y_2=0,
-                                           sigma_x_1=50, sigma_x_2=15,
-                                           sigma_y_1=50, sigma_y_2=15)
+                                           mu_x_1=-15, mu_x_2=15,
+                                           mu_y_1=-15, mu_y_2=15,
+                                           sigma_x_1=25, sigma_x_2=25,
+                                           sigma_y_1=25, sigma_y_2=25)
 
     scalar_field_values = scalar_field_values.reshape((z_points, y_points, x_points))
 

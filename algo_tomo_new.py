@@ -527,7 +527,7 @@ def final_function(nb_cell_x,nb_cell_z,spacing_x,spacing_z,nb_voxel_x,nb_voxel_y
     np.save('projections.npy',projections)
     return projections,A
 
-projections,maxz=final_function(2,2,2,2,15,15,5,100,9)
+projections,maxz=final_function(10,3,2,2,20,20,3,100,9)
 #print('max from function', projections[4][4])
 
 # for projection_cube in projections:

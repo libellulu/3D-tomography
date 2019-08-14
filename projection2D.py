@@ -255,6 +255,7 @@ projections = []
 for n in range (0,len(list_x_CCD3)):
     A=LOS_creation(list_x_CCD3[n], list_y_CCD3[n],list_z_CCD3[n])
     line = LineString([(A[0][0], A[0][1]), (A[-1][0], A[-1][1])])
+    print('linestring', line)
     projection = np.zeros((n_rows, n_cols))
     for segment in line.difference(grid):
         xx, yy = segment.xy
