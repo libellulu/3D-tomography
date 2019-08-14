@@ -5,7 +5,7 @@ from algo_tomo_new import max_z_among_all_CCD
 from reconstructions import tikhonov
 import matplotlib.pyplot as plt
 
-def comparison(printplot,nb_cell_x,nb_cell_z,spacing_x,spacing_z,nb_voxel_x,nb_voxel_y,nb_voxel_z,radius_tokamak,pinhole_to_CCD):
+def comparison(printplot,nb_cell_x,nb_cell_z,spacing_x,spacing_z,nb_voxel_x,nb_voxel_y,nb_voxel_z,radius_tokamak,pinhole_to_CCD,"alpha"):
 
     real_projection,maxz=final_function(nb_cell_x,nb_cell_z,spacing_x,spacing_z,nb_voxel_x,nb_voxel_y,nb_voxel_z,radius_tokamak,pinhole_to_CCD)
 
@@ -75,13 +75,21 @@ def comparison(printplot,nb_cell_x,nb_cell_z,spacing_x,spacing_z,nb_voxel_x,nb_v
     for g_cut, ax in zip(g, axes):
         ax.imshow(g_cut)
     plt.show()
-    return real_projection
+    return real_projection,g,"the plasma from mini fisher"
 
-comparison(1,12,12,7,7,20,20,4,100,20)
+#comparison(1,12,12,7,7,20,20,4,100,20)
 # for pinhole_to_CCD in (4,7):
 #     print('pinhole',pinhole_to_CCD)
 #     comparison(1,5,5,2,2,15,15,5,100,pinhole_to_CCD)
 
+def control_nb_cells():
 # tuning of the x and z number of cells
-#for n in (2,4,6,8,10,12):
-#    comparison(1,12,12,7,7,20,20,4,100,20)
+    comparison_list=defaultdict(list)
+
+    for alpha in (0.5,2,5)
+        for n in (2,4,6,8,10,12):
+            g,plasma=comparison(1,n,n,3,3,20,20,4,100,20,alpha)
+            reconstruction=np.sum(g)
+            original=np.sum(plasma)
+            accuracy=1-np.abs(reconstruction-original)/(original*20*20)
+            
