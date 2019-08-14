@@ -517,8 +517,8 @@ def integration_with_interval(function_g,listx,listy,listz,interval_size):
     return intensity_list_LOS,remember_coord
 
 #creation of the 3 CCD at the good place in space
-nb_cell_x=8
-nb_cell_z=8
+nb_cell_x=10
+nb_cell_z=3
 CCD_1,CCD_2,CCD_3=creation_of_3D_sensor_in_space(function_creation(nb_cell_x, nb_cell_z, spacing_x=2, spacing_z=2))
 
 #preparing the plot
@@ -535,9 +535,9 @@ list_x_CCD3, list_y_CCD3,list_z_CCD3,list_x_CCD2,list_y_CCD2,list_z_CCD2,list_x_
 A=max_z_among_all_CCD(list_x_CCD3, list_y_CCD3,list_z_CCD3,list_x_CCD2,list_y_CCD2,list_z_CCD2,list_x_CCD1,list_y_CCD1,list_z_CCD1)
 print("maximum z", A)
 
-nb_voxel_x = 30
-nb_voxel_y = 30
-nb_voxel_z = 5
+nb_voxel_x = 20
+nb_voxel_y = 20
+nb_voxel_z = 3
 
 S=voxel_creation(A,nb_voxel_x,nb_voxel_y,nb_voxel_z,radius_tokamak)
 

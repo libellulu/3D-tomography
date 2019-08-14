@@ -53,6 +53,7 @@ def gaussian_zz_cone(x, y, z,
 
     return g
 
+
 if __name__ =='__main__':
     # Test plot --------------------------------------------
     # In this example the distribution starts in the center,
