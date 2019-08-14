@@ -5,23 +5,20 @@ import matplotlib.pyplot as plt
 from skimage.draw import ellipse
 
 
-def tikhonov(signals):
-    """Apply the Tikhonov regularization algorithm for a given set of measurements from tomography.
+def tikhonov(signals, alpha, max_iterations=10):
+    """Apply the Tikhonov method with minimum Fisher Regularization.
 
     input:
-        signals: array or list of arrays
-            should be an array of single measurements from each sensor ordered like in "projections",
-            or a list of such arrays
-        alpha_x, alpha_y, alpha_z, alpha_norm: float
-            regularization weights. DerivativeHorizontal derivative. Vertical derivative. Outside Norm. Inside Norm.
+        signals: array
+            List or array of signal measurements
+        alpha: float
+            regularization weight.
         max_iterations: int
-            Maximum number of iterations before algorithm gives up
+            Maximum number of iterations for the minimum fisher loop
 
     output:
-        g_list: array or list of arrays
-            Reconstructed g vector, or multiple g vectors if multiple signals were provided
-        first_g: array
-            First iteration g vector. This is the result of the simple Tikhonov regularization
+        g: ndarray
+            Reconstructed g vector
     """
 
     # -------------------------------------------------------------------------
@@ -31,12 +28,6 @@ def tikhonov(signals):
     projections = np.load(fname)
 
     print('projections:', projections.shape, projections.dtype)
-
-    # -------------------------------------------------------------------------
-
-    P = projections.reshape((projections.shape[0], -1))
-
-    print('P:', P.shape, P.dtype)
 
     # -------------------------------------------------------------------------
 
@@ -120,43 +111,50 @@ def tikhonov(signals):
 
     # -------------------------------------------------------------------------
 
-    Pt = np.transpose(P)
-    PtP = np.dot(Pt, P)
+    P = (projections*mask_positive).reshape((projections.shape[0], -1))
 
-    DtDx = np.dot(np.transpose(Dx), Dx)
-    DtDy = np.dot(np.transpose(Dy), Dy)
-    DtDz = np.dot(np.transpose(Dz), Dz)
+    print('P:', P.shape, P.dtype)
 
-    ItIo = np.dot(np.transpose(Io), Io)
-
-    alpha_x = 1e5
-    alpha_y = alpha_x
-    alpha_z = alpha_x
-
-    alpha_norm = alpha_x * 10
-
-    inv = np.linalg.inv(PtP + alpha_x*DtDx + alpha_y*DtDy + alpha_z*DtDz + alpha_norm*ItIo)
-
-    M = np.dot(inv, Pt)
-
-    #  -------------------------------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
 
     f = np.array(signals)
 
-    g = np.dot(M, f).reshape((n_cuts, n_rows, n_cols))
+    Pt = np.transpose(P)
+    PtP = np.dot(Pt, P)
 
+    ItIo = np.dot(np.transpose(Io), Io)
+
+    alpha_x = alpha
+    alpha_y = alpha
+    alpha_z = alpha
+    alpha_norm = alpha * 10
+
+    g = np.ones_like(P[0])  # Initial guess is uniform emissivity everywhere
+
+    for i in range(max_iterations):
+
+        g[g < 1e-20] = 1e-20  # Clip the values below a certain threshold
+        W = np.diag(1.0 / g)  # Weight matrix
+
+        DtWDx = np.dot(Dx.T, np.dot(W, Dx))
+        DtWDy = np.dot(Dy.T, np.dot(W, Dy))
+        DtWDz = np.dot(Dz.T, np.dot(W, Dz))
+
+        inv = np.linalg.inv(PtP + alpha_x * DtWDx + alpha_y * DtWDy + alpha_z * DtWDz + alpha_norm * ItIo)
+        M = np.dot(inv, Pt)
+        g = np.dot(M, f)
+
+    # fig, axes = plt.subplots(1, len(g))
+    # for ax, cross_section in zip(axes, g):
+    #     ax.imshow(cross_section)    #
+    # plt.show()
+
+    return g.reshape((n_cuts, n_rows, n_cols))
+
+
+if __name__ == "__main__":
+    signals = np.load("signals.npy")
+    g = tikhonov(signals, alpha=100)
     fig, axes = plt.subplots(1, len(g))
-
-    for ax, cross_section in zip(axes, g):
-        ax.imshow(cross_section)
-
-    plt.show()
-
-    return g
-
-
-signals = np.load("signals.npy")
-g = tikhonov(signals)
-# fig, axes = plt.subplots(1, len(g))
-# for g_cut, ax in zip(g, axes):
-#     ax.imshow(g_cut)
+    for g_cut, ax in zip(g, axes):
+        ax.imshow(g_cut)
