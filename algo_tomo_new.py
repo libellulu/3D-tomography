@@ -90,7 +90,7 @@ def offset_pinhole_and_array(matrix, coordinate_pinhole,distance_to_array):
     """
     offset_matrix=matrix+coordinate_pinhole+distance_to_array
     return offset_matrix
-def creation_of_3D_sensor_in_space(matrix_already_done,pinhole_to_CCD):
+def creation_of_3D_sensor_in_space(matrix_already_done,pinhole_to_CCD1,pinhole_to_CCD2,pinhole_to_CCD3):
     """ Function creating my sensor, the place of those are relative to the
     center 0,0,0 of the vessel
     Requires to already have used function_creation previously to have an
@@ -120,9 +120,9 @@ def creation_of_3D_sensor_in_space(matrix_already_done,pinhole_to_CCD):
     # theta2=np.pi/2
     # rotation_matrix_x=np.array([[1,0,0],[0,np.cos(theta2),np.sin(theta2)*(-1)],[0,np.sin(theta2),np.cos(theta2)]])
     # second_matrix=np.dot(rotation_matrix_x,new_2.T).T
-    PDarray_to_pinhole1=[0,pinhole_to_CCD,0]
-    PDarray_to_pinhole2=[pinhole_to_CCD,0,0]
-    PDarray_to_pinhole3=[pinhole_to_CCD*np.cos(-np.pi*82.5/180),pinhole_to_CCD*np.sin(-np.pi*82.5/180),0]
+    PDarray_to_pinhole1=[0,pinhole_to_CCD1,0]
+    PDarray_to_pinhole2=[pinhole_to_CCD2,0,0]
+    PDarray_to_pinhole3=[pinhole_to_CCD3*np.cos(-np.pi*82.5/180),pinhole_to_CCD3*np.sin(-np.pi*82.5/180),0]
     CCD_1=offset_pinhole_and_array(matrix_already_done,Pinhole_coord1,PDarray_to_pinhole1)
     CCD_2=offset_pinhole_and_array(second_matrix,Pinhole_coord2,PDarray_to_pinhole2)
 
@@ -156,6 +156,12 @@ def lists_for_LOS_draw(CCD_1, CCD_2, CCD_3, plot_list=[]):
     successive lists of x coordinates that are in each LOS of CCD1
     will be the same for y, z and for CCD2 and 3
     """
+    #preparing the plot
+    fig = plt.figure()
+    ax = fig.add_subplot(1,2,1, projection='3d')
+    ax.set_xlabel('x')
+    ax.set_ylabel('y')
+    ax.set_zlabel('z')
 
     list_x_CCD1=[]
     list_y_CCD1=[]
@@ -198,6 +204,10 @@ def lists_for_LOS_draw(CCD_1, CCD_2, CCD_3, plot_list=[]):
         list_z_CCD3.append(z_vector_3)
         if 'CCD3' in plot_list:
             ax.plot(x_vector_3,y_vector_3,z_vector_3, color='blue')
+
+    if len(plot_list)!=0:
+        draw_cylinder(100,ax)
+        plt.show()
 
     #plt.ylim((-600, 600))
     #plt.xlim((-600, 600))
@@ -328,7 +338,7 @@ def intersection_all_LOS(matrix_voxel_created,listx,listy,listz):
             #print('intersection of the LOS'+str(i)+'with the voxel number'+str(n), intersection.length)
 
     return remember_intersection
-def draw_cylinder(radius_tokamak):
+def draw_cylinder(radius_tokamak,ax):
 
     """Function that will plot the cylinder representing the vessel
     This function has to be called in a plt.show()
@@ -502,19 +512,13 @@ def integration_with_interval(function_g,listx,listy,listz,interval_size):
     print('intensity of that point 1', intensity_list_LOS[6][0])
     print('value of the integral along line number 6', np.sum(intensity_list_LOS[6]))
     return intensity_list_LOS,remember_coord
-#preparing the plot
-fig = plt.figure()
-ax = fig.add_subplot(1,2,1, projection='3d')
-ax.set_xlabel('x')
-ax.set_ylabel('y')
-ax.set_zlabel('z')
-# draw_cylinder(100)
-def final_function(nb_cell_x,nb_cell_z,spacing_x,spacing_z,nb_voxel_x,nb_voxel_y,nb_voxel_z,radius_tokamak,pinhole_to_CCD):
-    #creation of the 3 CCD at the good place in space
-    CCD_1,CCD_2,CCD_3=creation_of_3D_sensor_in_space(function_creation(nb_cell_x, nb_cell_z, spacing_x, spacing_z),pinhole_to_CCD)
-    list_x_CCD3, list_y_CCD3,list_z_CCD3,list_x_CCD2,list_y_CCD2,list_z_CCD2,list_x_CCD1,list_y_CCD1,list_z_CCD1=lists_for_LOS_draw(CCD_1,CCD_2,CCD_3)
-    A=max_z_among_all_CCD(list_x_CCD3, list_y_CCD3,list_z_CCD3,list_x_CCD2,list_y_CCD2,list_z_CCD2,list_x_CCD1,list_y_CCD1,list_z_CCD1)
 
+def final_function(nb_cell_x,nb_cell_z,spacing_x,spacing_z,nb_voxel_x,nb_voxel_y,nb_voxel_z,radius_tokamak,pinhole_to_CCD1,pinhole_to_CCD2,pinhole_to_CCD3):
+    #creation of the 3 CCD at the good place in space
+    CCD_1,CCD_2,CCD_3=creation_of_3D_sensor_in_space(function_creation(nb_cell_x, nb_cell_z, spacing_x, spacing_z),pinhole_to_CCD1,pinhole_to_CCD2,pinhole_to_CCD3)
+    list_x_CCD3, list_y_CCD3,list_z_CCD3,list_x_CCD2,list_y_CCD2,list_z_CCD2,list_x_CCD1,list_y_CCD1,list_z_CCD1=lists_for_LOS_draw(CCD_1,CCD_2,CCD_3,['CCD1','CCD2','CCD3'])
+    A=max_z_among_all_CCD(list_x_CCD3, list_y_CCD3,list_z_CCD3,list_x_CCD2,list_y_CCD2,list_z_CCD2,list_x_CCD1,list_y_CCD1,list_z_CCD1)
+    print('Ay i m here',A )
 
     S=voxel_creation(A,nb_voxel_x,nb_voxel_y,nb_voxel_z,radius_tokamak)
 
@@ -525,13 +529,15 @@ def final_function(nb_cell_x,nb_cell_z,spacing_x,spacing_z,nb_voxel_x,nb_voxel_y
     projections=np.array(list_of_intersection).flatten().reshape((nb_cell_x * nb_cell_z * 3, nb_voxel_z, nb_voxel_y, nb_voxel_x))
 
     np.save('projections.npy',projections)
+
+
+    plt.show()
     return projections,A
 
-projections,maxz=final_function(10,3,2,2,20,20,3,100,9)
+#projections,maxz=final_function(10,3,2,2,20,20,3,100,9)
 #print('max from function', projections[4][4])
 
 # for projection_cube in projections:
 #     fig, axes = plt.subplots(1, len(projection_cube))
 #     for ax, p in zip(axes, projection_cube):
 #         ax.imshow(p)
-# plt.show()
