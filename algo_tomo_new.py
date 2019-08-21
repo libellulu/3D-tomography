@@ -28,13 +28,13 @@ Pinhole_coord2=[100,0,0]
 Pinhole_coord3=[5+100*np.cos(-np.pi*82.5/180), 100*np.sin(-np.pi*82.5/180),0]
 
 #create a line of point to use for the creation of the Line of sight
-number_of_points_per_line=10
-t=np.linspace(0,25,number_of_points_per_line)
+number_of_points_per_line=200
+t=np.linspace(0,50,number_of_points_per_line)
 
 radius_tokamak=100
 
 
-def function_creation(nb_x, nb_z , spacing_x, spacing_z, y=0):
+def function_creation(nb_x, nb_z , spacing_x,spacing_z, y=0):
     """This function returns an array that represents a 3D matrix for a new
     tomography sensor.
 
@@ -136,6 +136,7 @@ def creation_of_3D_sensor_in_space(matrix_already_done,pinhole_to_CCD1,pinhole_t
     rotate_coordinate=np.dot(rotation_matrix,new_forCCD3.T).T
 
     CCD_3=offset_pinhole_and_array(rotate_coordinate,Pinhole_coord3,PDarray_to_pinhole3)
+
     return CCD_1,CCD_2,CCD_3
 def lists_for_LOS_draw(CCD_1, CCD_2, CCD_3, plot_list=[]):
     """Function that we use to draw the cones of tomography.
@@ -157,11 +158,12 @@ def lists_for_LOS_draw(CCD_1, CCD_2, CCD_3, plot_list=[]):
     will be the same for y, z and for CCD2 and 3
     """
     #preparing the plot
-    fig = plt.figure()
-    ax = fig.add_subplot(1,2,1, projection='3d')
-    ax.set_xlabel('x')
-    ax.set_ylabel('y')
-    ax.set_zlabel('z')
+    if 'CCD1' in plot_list:
+        fig = plt.figure()
+        ax = fig.add_subplot(1,2,1, projection='3d')
+        ax.set_xlabel('x')
+        ax.set_ylabel('y')
+        ax.set_zlabel('z')
 
     list_x_CCD1=[]
     list_y_CCD1=[]
@@ -206,48 +208,70 @@ def lists_for_LOS_draw(CCD_1, CCD_2, CCD_3, plot_list=[]):
             ax.plot(x_vector_3,y_vector_3,z_vector_3, color='blue')
 
     if len(plot_list)!=0:
+        plt.ylim((-200, 200))
+        plt.xlim((-200, 200))
+        ax.set_zlim((-200, 200))
         draw_cylinder(100,ax)
         plt.show()
 
-    #plt.ylim((-600, 600))
-    #plt.xlim((-600, 600))
-    #ax.set_zlim((-600, 600))
+
 
     #print(np.linalg.norm([list_x_CCD3[0][-1]-list_x_CCD3[0][0],list_y_CCD3[0][-1]-list_y_CCD3[0][0]]))
     #print(np.linalg.norm([list_x_CCD3[-1][-1]-list_x_CCD3[-1][0],list_y_CCD3[-1][-1]-list_y_CCD3[-1][0]]))
 
     return list_x_CCD3,list_y_CCD3,list_z_CCD3,list_x_CCD2,list_y_CCD2,list_z_CCD2,list_x_CCD1,list_y_CCD1,list_z_CCD1
-def find_furthest_z(listx,listy,listz):
+def find_furthest_z(CCD,pinhole_coord):
     """Function that finds the furthest point in z among the LOS of one CCDs.
 
     Parameters
     ----------
-    listx : list of integer
-    the list of x coordinatesof all the points constituting all the LOS
-    of one CCD. The return of the lists_for_LOS_draw functions
-    listy, listz : idem in the other axes
+    CCD: one of the CCD created by creation_of_3D_sensor_in_space
 
     Returns
     -------
-    maxx : integer
-    the furthest point in the space in the z direction
+    max : integer
+    the furthest point in the space in the z direction for the tested CCD
     """
-    list_new_z_a=[]
 
-    for i in range(0,len(listx)):
-        # print('nouveau')
-        # print('i=', i)
-        # print('ma liste', listx[i])
-        # print('length of list i', len(listx[i]))
-        # print('list i de 2', listx[i][2])
-        for n in range (0, len(listx[i])):
-            new_z_a=listz[i][n][np.sqrt(listx[i][n]**2+listy[i][n]**2)<100]
-            if new_z_a.size >0:
-                list_new_z_a.append(new_z_a)
-    maxx=np.max(list_new_z_a)
 
-    return maxx
-def max_z_among_all_CCD(listx1,listy1,listz1,listx2,listy2,listz2,listx3,listy3,listz3):
+    maxz_old=0
+    maxz_new=0
+    K_old=0
+    local_max=0
+
+    K_new=0
+    px=pinhole_coord[0]
+    py=pinhole_coord[1]
+    pz=pinhole_coord[2]
+
+
+    for detector in CCD:
+
+        CCDx=detector[0]
+        CCDy=detector[1]
+
+        a= (px-CCDx)**2+(py-CCDy)**2
+        b=2*px*(px-CCDx)+2*py*(py-CCDy)
+        c=px**2+py**2-100**2
+        K_new=(-b+np.sqrt(b**2-4*a*c))/(2*a)
+
+        if K_new>K_old:
+
+            local_max=K_new.copy()
+        K_old=K_new.copy()
+
+    for n in CCD:
+        CCDz=n[2]
+        maxz_new=pz+local_max*(pz-CCDz)
+
+        if maxz_new>maxz_old:
+
+            max_forCCD=maxz_new.copy()
+        maxz_old=maxz_new.copy()
+
+    return max_forCCD
+
+def max_z_among_all_CCD(CCD_1,CCD_2,CCD_3):
     """Function that returns the furthest point in the z axes among all the LOS
      of all the CCD.
 
@@ -264,16 +288,19 @@ def max_z_among_all_CCD(listx1,listy1,listz1,listx2,listy2,listz2,listx3,listy3,
      supermax : integer
      the furthest z point among all CCD
     """
-    max_for_CCD1=find_furthest_z(listx1,listy1,listz1)
-    max_for_CCD2=find_furthest_z(listx2,listy2,listz2)
-    max_for_CCD3=find_furthest_z(listx3,listy3,listz3)
-
+    max_for_CCD1=find_furthest_z(CCD_1,Pinhole_coord1)
+    print('max for 1',max_for_CCD1)
+    max_for_CCD2=find_furthest_z(CCD_2,Pinhole_coord2)
+    print('max for 2',max_for_CCD2)
+    max_for_CCD3=find_furthest_z(CCD_3,Pinhole_coord3)
+    print('max for 3',max_for_CCD3)
+    supermax=0
     if max_for_CCD1>max_for_CCD2:
-        supermax=max_for_CCD1
+        supermax=max_for_CCD1.copy()
     else:
-        supermax=max_for_CCD2
-        if max_for_CCD3>supermax:
-            supermax=max_for_CCD3
+        supermax=max_for_CCD2.copy()
+    if max_for_CCD3>supermax:
+        supermax=max_for_CCD3.copy()
 
     return supermax
 def voxel_creation(max_found,nb_voxel_x, nb_voxel_y,nb_voxel_z,radius_tokamak):
@@ -516,8 +543,9 @@ def integration_with_interval(function_g,listx,listy,listz,interval_size):
 def final_function(nb_cell_x,nb_cell_z,spacing_x,spacing_z,nb_voxel_x,nb_voxel_y,nb_voxel_z,radius_tokamak,pinhole_to_CCD1,pinhole_to_CCD2,pinhole_to_CCD3):
     #creation of the 3 CCD at the good place in space
     CCD_1,CCD_2,CCD_3=creation_of_3D_sensor_in_space(function_creation(nb_cell_x, nb_cell_z, spacing_x, spacing_z),pinhole_to_CCD1,pinhole_to_CCD2,pinhole_to_CCD3)
-    list_x_CCD3, list_y_CCD3,list_z_CCD3,list_x_CCD2,list_y_CCD2,list_z_CCD2,list_x_CCD1,list_y_CCD1,list_z_CCD1=lists_for_LOS_draw(CCD_1,CCD_2,CCD_3,['CCD1','CCD2','CCD3'])
-    A=max_z_among_all_CCD(list_x_CCD3, list_y_CCD3,list_z_CCD3,list_x_CCD2,list_y_CCD2,list_z_CCD2,list_x_CCD1,list_y_CCD1,list_z_CCD1)
+    list_x_CCD3, list_y_CCD3,list_z_CCD3,list_x_CCD2,list_y_CCD2,list_z_CCD2,list_x_CCD1,list_y_CCD1,list_z_CCD1=lists_for_LOS_draw(CCD_1,CCD_2,CCD_3)
+
+    A=max_z_among_all_CCD(CCD_1,CCD_2,CCD_3)
     print('Ay i m here',A )
 
     S=voxel_creation(A,nb_voxel_x,nb_voxel_y,nb_voxel_z,radius_tokamak)
@@ -529,15 +557,19 @@ def final_function(nb_cell_x,nb_cell_z,spacing_x,spacing_z,nb_voxel_x,nb_voxel_y
     projections=np.array(list_of_intersection).flatten().reshape((nb_cell_x * nb_cell_z * 3, nb_voxel_z, nb_voxel_y, nb_voxel_x))
 
     np.save('projections.npy',projections)
-
-
-    plt.show()
     return projections,A
+#final_function(8,3,0.95,0.95,18,18,3,100,5.7,5.7,5.7)
 
-#projections,maxz=final_function(10,3,2,2,20,20,3,100,9)
-#print('max from function', projections[4][4])
+if __name__=="__main__":
 
-# for projection_cube in projections:
-#     fig, axes = plt.subplots(1, len(projection_cube))
-#     for ax, p in zip(axes, projection_cube):
-#         ax.imshow(p)
+    projections,maxz=final_function(30,3,0.98,0.112,18,18,5,100,7,7,7)
+
+    sensor_index=list(np.arange(0,90,3))
+    fig,axes= plt.subplots(1,len(projections[0]))
+    all_projections=np.zeros_like(projections[0])
+    for i in sensor_index:
+        all_projections+=projections[i]
+    for ax,cross_section in zip(axes,all_projections):
+        ax.imshow(cross_section)
+    
+    plt.show()
