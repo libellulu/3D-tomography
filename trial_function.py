@@ -66,9 +66,9 @@ def comparison(printplot,nb_cell_x,nb_cell_z,spacing_x,spacing_z,nb_voxel_x,nb_v
     scalar_field_values_2 = gaussian_zz_cone(x=scalar_field_coordinates[2].flatten(),
                                        y=scalar_field_coordinates[1].flatten(),
                                        z=scalar_field_coordinates[0].flatten(),
-                                       base_1=-150, base_2=150,
-                                       mu_x_1=-35, mu_x_2=25,
-                                       mu_y_1=20, mu_y_2=90,
+                                       base_1=-100, base_2=100,
+                                       mu_x_1=-45, mu_x_2=60,
+                                       mu_y_1=-50, mu_y_2=130,
                                        sigma_x_1=15, sigma_x_2=15,
                                        sigma_y_1=15, sigma_y_2=15)
     scalar_field_values = (scalar_field_values_1+scalar_field_values_2).reshape((z_points, y_points, x_points))
@@ -131,8 +131,9 @@ def unitest():
     accuracy_list= []
 
     alpha_list=[]
-    for alpha in (0.08,0.09):
-        g,plasma=comparison(0,30,3,0.979,0.112,30,30,3,100,10,10,10,alpha)
+    alpha=0.2
+    if alpha==0.2:
+        g,plasma=comparison(0,30,3,0.979,0.112,20,20,3,100,8.35,8.35,8.35,alpha)
         accuracy=1-(np.sum(np.abs(g-plasma))/(np.sum(plasma)))
         accuracy_list.append(accuracy)
 
@@ -256,12 +257,12 @@ def control_dist_pinhole():
     alpha_list=[]
 
 
-    for alpha in (0.18,0.185,0.19):
+    for alpha in (0.09,0.12):
 
-        for n in (8.3,8.35,8.4):
+        for n in (8.7,9.3):
 
             print('surviving',n,alpha)
-            g,plasma=comparison(0,30,3,0.98,0.112,18,18,3,100,n,n,n,alpha)
+            g,plasma=comparison(0,30,3,0.98,0.112,30,30,3,100,n,n,n,alpha)
             plt.show()
             accuracy=1-(np.sum(np.abs(g-plasma))/(np.sum(plasma)))
             accuracy_list.append(accuracy)
@@ -277,6 +278,6 @@ def control_dist_pinhole():
     print('optimum parameters','n=',n_list[index_max],'alpha =',alpha_list[index_max],'accuracy=',accuracy_list[index_max])
     return maximum,index_max
 
-# max, imax=control_nb_voxels()
-# print('out of function', max,imax)
-unitest()
+max, imax=control_dist_pinhole()
+print('out of function', max,imax)
+#unitest()
