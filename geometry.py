@@ -94,7 +94,9 @@ def intersect(voxel: Voxel, line: Line) -> LineSegment:
                 index += 1
                 if index == 2:
                     break
-
+    intersection_segment=LineSegment(intersection[0], intersection[1])
+    if intersection_segment.length==100.0:
+        print('intersection gave 100',voxel.start,voxel.end,line.anchor,line.direction)
     return LineSegment(intersection[0], intersection[1])
 
 
@@ -106,4 +108,3 @@ if __name__ == "__main__":
     my_voxel = Voxel(0, 0, 0, 1, 1, 1)
 
     print(my_line.intersect(my_voxel).length)
-

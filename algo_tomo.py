@@ -1,5 +1,4 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
+
 """
 Created on Tue Jul 30 15:22:10 2019
 
@@ -74,8 +73,6 @@ def function_creation(nb_x, nb_z , spacing_x, spacing_z, y=0):
     print(final_array)
 
     return(final_array)
-
-
 def offset_pinhole_and_array(matrix, coordinate_pinhole,distance_to_array):
     """Function that calculate the new place of the detector in the space
     The detector is a matrix of coordinate (x,y,z) that are offset through
@@ -98,8 +95,6 @@ def offset_pinhole_and_array(matrix, coordinate_pinhole,distance_to_array):
     """
     offset_matrix=matrix+coordinate_pinhole+distance_to_array
     return offset_matrix
-
-
 def creation_of_3D_sensor_in_space(matrix_already_done):
     """ Function creating my sensor, the place of those are relative to the
     center 0,0,0 of the vessel
@@ -145,9 +140,7 @@ def creation_of_3D_sensor_in_space(matrix_already_done):
 
     CCD_3=offset_pinhole_and_array(rotate_coordinate,Pinhole_coord3,PDarray_to_pinhole3)
     return CCD_1,CCD_2,CCD_3
-
-
-def lists_for_LOS_draw(CCD_1, CCD_2, CCD_3, plot_list=[]):
+def lists_for_LOS_draw(CCD_1, CCD_2, CCD_3):
     """Function that we use to draw the cones of tomography.
     It calculates list of x points, of y , and of z, that are used to draw
     the lines of sight, and will also remember them in a list.
@@ -184,8 +177,8 @@ def lists_for_LOS_draw(CCD_1, CCD_2, CCD_3, plot_list=[]):
         list_y_CCD1.append(y_vector)
         list_x_CCD1.append(x_vector)
         list_z_CCD1.append(z_vector)
-        if 'CCD1' in plot_list:
-            ax.plot(x_vector,y_vector,z_vector,c='red')
+
+        ax.plot(x_vector,y_vector,z_vector,c='red')
 
 
     for detector_2 in CCD_2:
@@ -196,8 +189,7 @@ def lists_for_LOS_draw(CCD_1, CCD_2, CCD_3, plot_list=[]):
         list_y_CCD2.append(y_vector_2)
         list_x_CCD2.append(x_vector_2)
         list_z_CCD2.append(z_vector_2)
-        if 'CCD2' in plot_list:
-            ax.plot(x_vector_2,y_vector_2,z_vector_2)
+        ax.plot(x_vector_2,y_vector_2,z_vector_2)
 
     for detector_3 in CCD_3:
         x_vector_3=(detector_3[0]+t*(Pinhole_coord3[0]-detector_3[0]))
@@ -206,19 +198,14 @@ def lists_for_LOS_draw(CCD_1, CCD_2, CCD_3, plot_list=[]):
         list_x_CCD3.append(x_vector_3)
         list_y_CCD3.append(y_vector_3)
         list_z_CCD3.append(z_vector_3)
-        if 'CCD3' in plot_list:
-            ax.plot(x_vector_3,y_vector_3,z_vector_3, color='blue')
+        #ax.plot(x_vector_3,y_vector_3,z_vector_3, color='blue')
 
-    plt.ylim((-600, 600))
-    plt.xlim((-600, 600))
-    ax.set_zlim((-600, 600))
+
 
     print(np.linalg.norm([list_x_CCD3[0][-1]-list_x_CCD3[0][0],list_y_CCD3[0][-1]-list_y_CCD3[0][0]]))
     print(np.linalg.norm([list_x_CCD3[-1][-1]-list_x_CCD3[-1][0],list_y_CCD3[-1][-1]-list_y_CCD3[-1][0]]))
 
     return list_x_CCD3,list_y_CCD3,list_z_CCD3,list_x_CCD2,list_y_CCD2,list_z_CCD2,list_x_CCD1,list_y_CCD1,list_z_CCD1
-
-
 def find_furthest_z(listx,listy,listz):
     """Function that finds the furthest point in z among the LOS of one CCDs.
 
@@ -340,7 +327,6 @@ def intersection_all_LOS(matrix_voxel_created,listx,listy,listz):
             #print('intersection of the LOS'+str(i)+'with the voxel number'+str(n), intersection.length)
 
     return remember_intersection
-
 def draw_cylinder(radius_tokamak):
 
     """Function that will plot the cylinder representing the vessel
@@ -376,7 +362,7 @@ def draw_cylinder(radius_tokamak):
     t, theta = np.meshgrid(t, theta)
     #generate coordinates for surface
     Z, X, Y = [p0[i] + v[i] * t + R * np.sin(theta) * n1[i] + R * np.cos(theta) * n2[i] for i in [0, 1, 2]]
-    ax.plot_surface(X, Y, Z,color='plum')
+    ax.plot_surface(X, Y, Z,color='plum',alpha=0.5)
 
     return X,Y,Z
 def LOS_creation(listx,listy,listz):
@@ -529,7 +515,8 @@ ax.set_ylabel('y')
 ax.set_zlabel('z')
 
 #call function for plot+show
-# draw_cylinder(100)
+draw_cylinder(100)
+
 def final_function(nb_cell_x,nb_cell_z,spacing_x,spacing_z,nb_voxel_x,nb_voxel_y,nb_voxel_z,radius_tokamak):
     #creation of the 3 CCD at the good place in space
     CCD_1,CCD_2,CCD_3=creation_of_3D_sensor_in_space(function_creation(nb_cell_x, nb_cell_z, spacing_x, spacing_z))
@@ -548,10 +535,10 @@ def final_function(nb_cell_x,nb_cell_z,spacing_x,spacing_z,nb_voxel_x,nb_voxel_y
     np.save('projections.npy',projections)
     return projections
 
-projections=final_function(10,3,2,2,20,20,3,100)
+projections=final_function(16,1,0.95,0,20,20,3,100)
 
 # for projection_cube in projections:
 #     fig, axes = plt.subplots(1, len(projection_cube))
 #     for ax, p in zip(axes, projection_cube):
 #         ax.imshow(p)
-# plt.show()
+plt.show()
