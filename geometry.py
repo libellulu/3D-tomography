@@ -94,10 +94,14 @@ def intersect(voxel: Voxel, line: Line) -> LineSegment:
                 index += 1
                 if index == 2:
                     break
-    intersection_segment=LineSegment(intersection[0], intersection[1])
-    if intersection_segment.length==100.0:
-        print('intersection gave 100',voxel.start,voxel.end,line.anchor,line.direction)
-    return LineSegment(intersection[0], intersection[1])
+
+    if index == 1:  # Line is only tangent to voxel
+        intersection_segment = LineSegment(np.zeros(3), np.zeros(3))
+
+    else:  # Line either crosses the vessel or does not
+        intersection_segment = LineSegment(intersection[0], intersection[1])
+
+    return intersection_segment
 
 
 if __name__ == "__main__":
