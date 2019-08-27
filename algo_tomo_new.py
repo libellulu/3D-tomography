@@ -26,7 +26,7 @@ the good use of the functions
 Pinhole_coord1=[5,100,0]
 Pinhole_coord2=[100,0,0]
 Pinhole_coord3=[5+100*np.cos(-np.pi*82.5/180), 100*np.sin(-np.pi*82.5/180),0]
-
+distance_pinhole_CCD=5.6
 #create a line of point to use for the creation of the Line of sight
 number_of_points_per_line=200
 t=np.linspace(0,50,number_of_points_per_line)
@@ -90,7 +90,7 @@ def offset_pinhole_and_array(matrix, coordinate_pinhole,distance_to_array):
     """
     offset_matrix=matrix+coordinate_pinhole+distance_to_array
     return offset_matrix
-def creation_of_3D_sensor_in_space(matrix_already_done,pinhole_to_CCD1,pinhole_to_CCD2,pinhole_to_CCD3):
+def creation_of_3D_sensor_in_space(matrix_already_done,distance_pinhole_CCD):
     """ Function creating my sensor, the place of those are relative to the
     center 0,0,0 of the vessel
     Requires to already have used function_creation previously to have an
@@ -120,9 +120,9 @@ def creation_of_3D_sensor_in_space(matrix_already_done,pinhole_to_CCD1,pinhole_t
     # theta2=np.pi/2
     # rotation_matrix_x=np.array([[1,0,0],[0,np.cos(theta2),np.sin(theta2)*(-1)],[0,np.sin(theta2),np.cos(theta2)]])
     # second_matrix=np.dot(rotation_matrix_x,new_2.T).T
-    PDarray_to_pinhole1=[0,pinhole_to_CCD1,0]
-    PDarray_to_pinhole2=[pinhole_to_CCD2,0,0]
-    PDarray_to_pinhole3=[pinhole_to_CCD3*np.cos(-np.pi*82.5/180),pinhole_to_CCD3*np.sin(-np.pi*82.5/180),0]
+    PDarray_to_pinhole1=[0,distance_pinhole_CCD,0]
+    PDarray_to_pinhole2=[distance_pinhole_CCD,0,0]
+    PDarray_to_pinhole3=[distance_pinhole_CCD*np.cos(-np.pi*82.5/180),distance_pinhole_CCD*np.sin(-np.pi*82.5/180),0]
     CCD_1=offset_pinhole_and_array(matrix_already_done,Pinhole_coord1,PDarray_to_pinhole1)
     CCD_2=offset_pinhole_and_array(second_matrix,Pinhole_coord2,PDarray_to_pinhole2)
 
@@ -540,9 +540,9 @@ def integration_with_interval(function_g,listx,listy,listz,interval_size):
     print('value of the integral along line number 6', np.sum(intensity_list_LOS[6]))
     return intensity_list_LOS,remember_coord
 
-def final_function(nb_cell_x,nb_cell_z,spacing_x,spacing_z,nb_voxel_x,nb_voxel_y,nb_voxel_z,radius_tokamak,pinhole_to_CCD1,pinhole_to_CCD2,pinhole_to_CCD3):
+def final_function(nb_cell_x,nb_cell_z,spacing_x,spacing_z,nb_voxel_x,nb_voxel_y,nb_voxel_z,radius_tokamak):
     #creation of the 3 CCD at the good place in space
-    CCD_1,CCD_2,CCD_3=creation_of_3D_sensor_in_space(function_creation(nb_cell_x, nb_cell_z, spacing_x, spacing_z),pinhole_to_CCD1,pinhole_to_CCD2,pinhole_to_CCD3)
+    CCD_1,CCD_2,CCD_3=creation_of_3D_sensor_in_space(function_creation(nb_cell_x, nb_cell_z, spacing_x, spacing_z),distance_pinhole_CCD)
     list_x_CCD3, list_y_CCD3,list_z_CCD3,list_x_CCD2,list_y_CCD2,list_z_CCD2,list_x_CCD1,list_y_CCD1,list_z_CCD1=lists_for_LOS_draw(CCD_1,CCD_2,CCD_3)
 
     A=max_z_among_all_CCD(CCD_1,CCD_2,CCD_3)
@@ -557,19 +557,20 @@ def final_function(nb_cell_x,nb_cell_z,spacing_x,spacing_z,nb_voxel_x,nb_voxel_y
     projections=np.array(list_of_intersection).flatten().reshape((nb_cell_x * nb_cell_z * 3, nb_voxel_z, nb_voxel_y, nb_voxel_x))
 
     np.save('projections.npy',projections)
-    return projections,A
-#final_function(8,3,0.95,0.95,18,18,3,100,5.7,5.7,5.7)
+    return projections,distance_pinhole_CCD
+
+#final_function(30,3,0.979,0.112,30,30,3,100)
 
 if __name__=="__main__":
 
-    projections,maxz=final_function(30,3,0.98,0.112,18,18,5,100,7,7,7)
+    projections,maxz=final_function(30,3,0.73,0.112,20,20,3,100)
 
-    sensor_index=list(np.arange(0,90,3))
+    sensor_index=list(np.arange(0,270))
     fig,axes= plt.subplots(1,len(projections[0]))
     all_projections=np.zeros_like(projections[0])
     for i in sensor_index:
-        all_projections+=projections[i]
+        all_projections=np.maximum(projections[i], all_projections)
     for ax,cross_section in zip(axes,all_projections):
         ax.imshow(cross_section)
-    
+
     plt.show()
