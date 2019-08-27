@@ -6,7 +6,7 @@ from reconstructions import tikhonov
 import matplotlib.pyplot as plt
 from collections import defaultdict
 
-def comparison(printplot,nb_cell_x,nb_cell_z,spacing_x,spacing_z,nb_voxel_x,nb_voxel_y,nb_voxel_z,radius_tokamak,pinhole_to_CCD1,pinhole_to_CCD2,pinhole_to_CCD3,alpha):
+def comparison(printplot,nb_cell_x,nb_cell_z,spacing_x,spacing_z,nb_voxel_x,nb_voxel_y,nb_voxel_z,radius_tokamak,alpha):
     """
     Function that compares the reconstruction of the signal with the generated
     signals
@@ -34,7 +34,7 @@ def comparison(printplot,nb_cell_x,nb_cell_z,spacing_x,spacing_z,nb_voxel_x,nb_v
     g : the reconstructed signal
     scalar_field_value : the plasma phantom
     """
-    real_projection,maxz=final_function(nb_cell_x,nb_cell_z,spacing_x,spacing_z,nb_voxel_x,nb_voxel_y,nb_voxel_z,radius_tokamak,pinhole_to_CCD1,pinhole_to_CCD2,pinhole_to_CCD3)
+    real_projection,distance_pinhole_CCD=final_function(nb_cell_x,nb_cell_z,spacing_x,spacing_z,nb_voxel_x,nb_voxel_y,nb_voxel_z,radius_tokamak)
 
 
     # Test plot --------------------------------------------
@@ -42,9 +42,9 @@ def comparison(printplot,nb_cell_x,nb_cell_z,spacing_x,spacing_z,nb_voxel_x,nb_v
     # and then moves to the top right corner while shrinking
 
 
-    x_min, x_max = (-radius_tokamak, radius_tokamak)
-    y_min, y_max = (-radius_tokamak, radius_tokamak)
-    z_min, z_max = (-maxz,maxz)
+    x_min, x_max = (-100,100)
+    y_min, y_max = (-100,100)
+    z_min, z_max = (-0.2,0.2)
 
     x_points, y_points, z_points = (nb_voxel_x,nb_voxel_y,nb_voxel_z)
 
@@ -54,32 +54,48 @@ def comparison(printplot,nb_cell_x,nb_cell_z,spacing_x,spacing_z,nb_voxel_x,nb_v
 
     scalar_field_coordinates = np.meshgrid(z_array, y_array, x_array, indexing='ij')
 
-    scalar_field_values_1 = gaussian_zz_cone(x=scalar_field_coordinates[2].flatten(),
-                                           y=scalar_field_coordinates[1].flatten(),
-                                           z=scalar_field_coordinates[0].flatten(),
-                                           base_1=-150, base_2=150,
-                                           mu_x_1=-15, mu_x_2=-15,
-                                           mu_y_1=-15, mu_y_2=-15,
-                                           sigma_x_1=25, sigma_x_2=25,
-                                           sigma_y_1=25, sigma_y_2=25)
+    x_coordinates = scalar_field_coordinates[2].flatten()
+    y_coordinates = scalar_field_coordinates[1].flatten()
+    z_coordinates = scalar_field_coordinates[0].flatten()
 
-    scalar_field_values_2 = gaussian_zz_cone(x=scalar_field_coordinates[2].flatten(),
-                                       y=scalar_field_coordinates[1].flatten(),
-                                       z=scalar_field_coordinates[0].flatten(),
-                                       base_1=-100, base_2=100,
-                                       mu_x_1=-45, mu_x_2=60,
-                                       mu_y_1=-50, mu_y_2=130,
-                                       sigma_x_1=15, sigma_x_2=15,
-                                       sigma_y_1=15, sigma_y_2=15)
-    scalar_field_values = (scalar_field_values_1+scalar_field_values_2).reshape((z_points, y_points, x_points))
+    scalar_field_values = gaussian_zz_cone(x=x_coordinates,
+                                           y=y_coordinates,
+                                           z=z_coordinates,
+                                           base_1=-2, base_2=2,
+                                           mu_x_1=0, mu_x_2=0,
+                                           mu_y_1=0, mu_y_2=0,
+                                           sigma_x_1=50, sigma_x_2=50,
+                                           sigma_y_1=50, sigma_y_2=50,
+                                           height_1=1, height_2=1)
+
+
+    scalar_field_values += gaussian_zz_cone(x=x_coordinates,
+                                            y=y_coordinates,
+                                            z=z_coordinates,
+                                            base_1=-2, base_2=2,
+                                            mu_x_1=70, mu_x_2=-50,
+                                            mu_y_1=80, mu_y_2=-30,
+                                            sigma_x_1=10, sigma_x_2=10,
+                                            sigma_y_1=10, sigma_y_2=10,
+                                            height_1=1, height_2=1)
+
+    scalar_field_values[x_coordinates**2 + y_coordinates**2 > 85**2] = 0.0
+
+    scalar_field_values = scalar_field_values.reshape((z_points, y_points, x_points))
+
+
+
 
     if printplot==1:
         fig, axes = plt.subplots(1, len(scalar_field_values))
 
         for ax, cross_section in zip(axes, scalar_field_values):
-            ax.imshow(cross_section)
+            #ax.imshow(cross_section)
+            ax.pcolormesh(np.linspace(-100,100,x_points+1),np.linspace(100,-100,y_points+1),cross_section)
 
+            ax.set_aspect('equal', adjustable='box')
 
+        plt.show()
     # Simulate tomography signals --------------------------------------------------
 
     fname = 'projections.npy'
@@ -108,7 +124,10 @@ def comparison(printplot,nb_cell_x,nb_cell_z,spacing_x,spacing_z,nb_voxel_x,nb_v
 
         fig, axes = plt.subplots(1, len(g))
         for g_cut, ax in zip(g, axes):
-            ax.imshow(g_cut)
+            #ax.imshow(g_cut)
+            ax.pcolormesh(np.linspace(-100,100,x_points+1),np.linspace(100,-100,y_points+1),g_cut)
+
+            ax.set_aspect('equal', adjustable='box')
         plt.show()
     return g,scalar_field_values
 
@@ -131,9 +150,9 @@ def unitest():
     accuracy_list= []
 
     alpha_list=[]
-    alpha=0.2
-    if alpha==0.2:
-        g,plasma=comparison(0,30,3,0.979,0.112,20,20,3,100,8.35,8.35,8.35,alpha)
+
+    for alpha in list(np.arange(300,2000,100)):
+        g,plasma=comparison(0,15,3,0.65,0.112,20,20,3,100,alpha)
         accuracy=1-(np.sum(np.abs(g-plasma))/(np.sum(plasma)))
         accuracy_list.append(accuracy)
 
@@ -145,7 +164,7 @@ def unitest():
     print('max array',maximum)
     index_max=accuracy_list.index(maximum)
     print('index',index_max)
-    print('optimum parameters','alpha=',alpha_list[index_max],'accuracy=',accuracy_list[index_max])
+    print('optimum parameters','alpha=',alpha_list[index_max],'accurac=',accuracy_list[index_max])
     return maximum,index_max
 
 
@@ -179,7 +198,7 @@ def control_nb_cells():
 
         for n in (2,8) :
             print('surviving',n,alpha)
-            g,plasma=comparison(1,16,n,0.95,0.95,18,18,3,100,5,5,5,alpha)
+            g,plasma=comparison(1,16,n,0.95,0.95,18,18,3,100,alpha)
 
             accuracy=1-(np.sum(np.abs(g-plasma))/(np.sum(plasma)))
             accuracy_list.append(accuracy)
@@ -215,12 +234,12 @@ def control_nb_voxels():
     alpha_list=[]
 
 
-    for alpha in (0.17,0.19):
+    for alpha in (700,1000,1200):
 
-        for n in (19,21):
+        for n in (15,18,20,25):
 
-            print('surviving',n,alpha)
-            g,plasma=comparison(0,30,3,0.979,0.112,n,n,3,100,8.35,8.35,8.35,alpha)
+            #print('surviving',n,alpha)
+            g,plasma=comparison(0,15,3,0.65,0.112,n,n,3,100,alpha)
 
             accuracy=1-(np.sum(np.abs(g-plasma))/(np.sum(plasma)))
             accuracy_list.append(accuracy)
@@ -236,9 +255,12 @@ def control_nb_voxels():
     return maximum,index_max
 
 #control distance to pinhole
+
 def control_dist_pinhole():
 
     """Function to try to determine the best distance to the pinhole.
+    Function that become useless now we have to fix this distance because
+    we have a fixed slice in z to see.
 
     Parameters
     ----------
@@ -278,6 +300,6 @@ def control_dist_pinhole():
     print('optimum parameters','n=',n_list[index_max],'alpha =',alpha_list[index_max],'accuracy=',accuracy_list[index_max])
     return maximum,index_max
 
-max, imax=control_dist_pinhole()
-print('out of function', max,imax)
-#unitest()
+#max, imax=control_nb_voxels()
+#print('out of function', max,imax)
+unitest()

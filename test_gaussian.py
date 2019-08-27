@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 
 
 def gaussian_zz_cone(x, y, z,
-                     base_1, base_2, mu_x_1, mu_x_2, mu_y_1, mu_y_2, sigma_x_1, sigma_x_2, sigma_y_1, sigma_y_2):
+                     base_1, base_2, mu_x_1, mu_x_2, mu_y_1, mu_y_2, sigma_x_1, sigma_x_2, sigma_y_1, sigma_y_2,height_1=None, height_2=None):
     """Scalar field of gaussian distributions in the xy plane overlapping in the zz direction. Like a cone.
     The cone is defined by its two bases, `base_1` and `base_2`.
     Base one has center (`mu_x_1`, `mu_y_1`) and standard deviation (`sigma_x_1`, `sigma_y_1`).
@@ -23,6 +23,9 @@ def gaussian_zz_cone(x, y, z,
         Standard deviation in xx for bases one and two.
     sigma_y_1, sigma_y_2: float
         Standard deviation in yy for bases one and two.
+    height_1, height_2: float, optional
+        Height of the gaussian function. If not specified, the gaussian will
+        default to a normalized version.
     """
 
     # mu_x changes linearly between mu_x_1 and mu_x_2
@@ -45,10 +48,22 @@ def gaussian_zz_cone(x, y, z,
     b = sigma_y_1 - k * base_1
     sigma_y = k * z + b
 
+    # height changes linearly between height_1 and height_2
+    k = (height_2 - height_1) / (base_2 - base_1)
+    b = height_1 - k * base_1
+    height = k * z + b
+
     n_x = 1. / np.sqrt( 2 * np.pi * sigma_x ** 2)
     n_y = 1. / np.sqrt( 2 * np.pi * sigma_y ** 2)
 
-    g = n_x * n_y * np.exp( - (x - mu_x) ** 2 / sigma_x ** 2 - (y - mu_y) ** 2 / sigma_y ** 2)
+    #if np.sqrt(x**2+y**2)<80.5:
+
+    if (height_1 != None) and (height_2 != None):
+        g = height * np.exp( - (x - mu_x) ** 2 / sigma_x ** 2 - (y - mu_y) ** 2 / sigma_y ** 2)
+    else:
+        g = n_x * n_y * np.exp( - (x - mu_x) ** 2 / sigma_x ** 2 - (y - mu_y) ** 2 / sigma_y ** 2)
+    #else:
+    #    g=0
 
     return g
 
@@ -60,9 +75,9 @@ if __name__ =='__main__':
 
     x_min, x_max = (-100, 100)
     y_min, y_max = (-100, 100)
-    z_min, z_max = (-2.64, 2.64)
+    z_min, z_max = (-0.2, 0.2)
 
-    x_points, y_points, z_points = (20,20, 3)
+    x_points, y_points, z_points = (30,30, 3)
 
     x_array = np.linspace(x_min, x_max, x_points)
     y_array = np.linspace(y_max, y_min, y_points)
@@ -70,29 +85,50 @@ if __name__ =='__main__':
 
     scalar_field_coordinates = np.meshgrid(z_array, y_array, x_array, indexing='ij')
 
-    scalar_field_values_1 = gaussian_zz_cone(x=scalar_field_coordinates[2].flatten(),
-                                           y=scalar_field_coordinates[1].flatten(),
-                                           z=scalar_field_coordinates[0].flatten(),
-                                           base_1=-100, base_2=100,
-                                           mu_x_1=-15, mu_x_2=-15,
-                                           mu_y_1=-15, mu_y_2=-15,
-                                           sigma_x_1=25, sigma_x_2=25,
-                                           sigma_y_1=25, sigma_y_2=25)
 
-    scalar_field_values_2 = gaussian_zz_cone(x=scalar_field_coordinates[2].flatten(),
-                                       y=scalar_field_coordinates[1].flatten(),
-                                       z=scalar_field_coordinates[0].flatten(),
-                                       base_1=-100, base_2=100,
-                                       mu_x_1=-45, mu_x_2=60,
-                                       mu_y_1=-50, mu_y_2=130,
-                                       sigma_x_1=15, sigma_x_2=15,
-                                       sigma_y_1=15, sigma_y_2=15)
-    scalar_field_values = (scalar_field_values_1+scalar_field_values_2).reshape((z_points, y_points, x_points))
+
+    x_coordinates = scalar_field_coordinates[2].flatten()
+    y_coordinates = scalar_field_coordinates[1].flatten()
+    z_coordinates = scalar_field_coordinates[0].flatten()
+
+    scalar_field_values = gaussian_zz_cone(x=x_coordinates,
+                                           y=y_coordinates,
+                                           z=z_coordinates,
+                                           base_1=-2, base_2=2,
+                                           mu_x_1=0, mu_x_2=0,
+                                           mu_y_1=0, mu_y_2=0,
+                                           sigma_x_1=50, sigma_x_2=50,
+                                           sigma_y_1=50, sigma_y_2=50,
+                                           height_1=1, height_2=1)
+
+
+    scalar_field_values += gaussian_zz_cone(x=x_coordinates,
+                                            y=y_coordinates,
+                                            z=z_coordinates,
+                                            base_1=-2, base_2=2,
+                                            mu_x_1=70, mu_x_2=-50,
+                                            mu_y_1=80, mu_y_2=-30,
+                                            sigma_x_1=10, sigma_x_2=10,
+                                            sigma_y_1=10, sigma_y_2=10,
+                                            height_1=1, height_2=1)
+
+    scalar_field_values[x_coordinates**2 + y_coordinates**2 > 85**2] = 0.0
+
+    scalar_field_values = scalar_field_values.reshape((z_points, y_points, x_points))
 
     fig, axes = plt.subplots(1, len(scalar_field_values))
+    # print('lentgh',len(scalar_field_values[0]))
+    # for i in range(0,len(scalar_field_values[0])):
+    #     print('premier', scalar_field_values[1][i])
+    #     if np.sqrt(scalar_field_values[1][i]**2+scalar_field_values[2][i]**2)>80.5:
+    #         scalar_field_values[1][i]=0
+    #         scalar_field_values[2][i]=0
 
     for ax, cross_section in zip(axes, scalar_field_values):
-        ax.imshow(cross_section)
+        #ax.imshow(cross_section)
+        ax.pcolormesh(np.linspace(-100,100,x_points+1),np.linspace(100,-100,y_points+1),cross_section)
+
+        ax.set_aspect('equal', adjustable='box')
 
     plt.show()
 
