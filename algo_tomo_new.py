@@ -26,7 +26,7 @@ the good use of the functions
 Pinhole_coord1=[5,100,0]
 Pinhole_coord2=[100,0,0]
 Pinhole_coord3=[5+100*np.cos(-np.pi*82.5/180), 100*np.sin(-np.pi*82.5/180),0]
-distance_pinhole_CCD=5.6
+distance_pinhole_CCD=8
 #create a line of point to use for the creation of the Line of sight
 number_of_points_per_line=200
 t=np.linspace(0,50,number_of_points_per_line)
