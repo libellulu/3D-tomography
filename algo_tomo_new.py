@@ -175,7 +175,6 @@ def lists_for_LOS_draw(CCD_1, CCD_2, CCD_3, plot_list=[]):
     list_y_CCD3=[]
     list_z_CCD3=[]
     for detector in CCD_1:
-        #print('detectors:', detector)
         x_vector=(detector[0]+t*(Pinhole_coord1[0]-detector[0]))
         y_vector=(detector[1]+t*(Pinhole_coord1[1]-detector[1]))
         z_vector=(detector[2]+t*(Pinhole_coord1[2]-detector[2]))
@@ -187,7 +186,6 @@ def lists_for_LOS_draw(CCD_1, CCD_2, CCD_3, plot_list=[]):
 
 
     for detector_2 in CCD_2:
-        #print('detectors2:', detector_2)
         x_vector_2=(detector_2[0]+t*(Pinhole_coord2[0]-detector_2[0]))
         y_vector_2=(detector_2[1]+t*(Pinhole_coord2[1]-detector_2[1]))
         z_vector_2=(detector_2[2]+t*(Pinhole_coord2[2]-detector_2[2]))
@@ -213,11 +211,6 @@ def lists_for_LOS_draw(CCD_1, CCD_2, CCD_3, plot_list=[]):
         ax.set_zlim((-200, 200))
         draw_cylinder(100,ax)
         plt.show()
-
-
-
-    #print(np.linalg.norm([list_x_CCD3[0][-1]-list_x_CCD3[0][0],list_y_CCD3[0][-1]-list_y_CCD3[0][0]]))
-    #print(np.linalg.norm([list_x_CCD3[-1][-1]-list_x_CCD3[-1][0],list_y_CCD3[-1][-1]-list_y_CCD3[-1][0]]))
 
     return list_x_CCD3,list_y_CCD3,list_z_CCD3,list_x_CCD2,list_y_CCD2,list_z_CCD2,list_x_CCD1,list_y_CCD1,list_z_CCD1
 def find_furthest_z(CCD,pinhole_coord):
@@ -289,11 +282,11 @@ def max_z_among_all_CCD(CCD_1,CCD_2,CCD_3):
      the furthest z point among all CCD
     """
     max_for_CCD1=find_furthest_z(CCD_1,Pinhole_coord1)
-    print('max for 1',max_for_CCD1)
+
     max_for_CCD2=find_furthest_z(CCD_2,Pinhole_coord2)
-    print('max for 2',max_for_CCD2)
+
     max_for_CCD3=find_furthest_z(CCD_3,Pinhole_coord3)
-    print('max for 3',max_for_CCD3)
+    
     supermax=0
     if max_for_CCD1>max_for_CCD2:
         supermax=max_for_CCD1.copy()
@@ -352,9 +345,9 @@ def intersection_all_LOS(matrix_voxel_created,listx,listy,listz):
     remember_intersection=[]
     for i in range(0,len(listx)):
         point1=LOS_creation(listx[i],listy[i],listz[i])[0]
-        #print('premier',point1)
+
         point2=LOS_creation(listx[i],listy[i],listz[i])[-1]
-        #print('second',point2)
+
         line=geo.Line(point1[0],point1[1],point1[2],point2[0],point2[1],point2[2])
         remember_line.append(line)
         #now the intersection
@@ -362,7 +355,6 @@ def intersection_all_LOS(matrix_voxel_created,listx,listy,listz):
             current_voxel=matrix_voxel_created[n]
             intersection= geo.intersect(current_voxel,line)
             remember_intersection.append(intersection.length)
-            #print('intersection of the LOS'+str(i)+'with the voxel number'+str(n), intersection.length)
 
     return remember_intersection
 def draw_cylinder(radius_tokamak,ax):
@@ -426,7 +418,7 @@ def LOS_creation(listx,listy,listz):
     """
     vector_coord=[]
     for n in range(0,len(listx)):
-        #print('survived')
+
         new_vect=[listx[n],listy[n],listz[n]]
         vector_coord.append(new_vect)
     vector_coord=np.array(vector_coord)
@@ -489,56 +481,7 @@ def example_of_use_of_integration():
     print('coordinate of the last point in the line number 6 of the CCD1',remember_coord[6][-1])
     print('intensity of that point 1', intensity_list_LOS[6][0])
     print('value of the integral along line number 6', np.sum(intensity_list_LOS[6]))#what we could call the main
-#function not working NOW , on its way to work one day
-def integration_with_interval(function_g,listx,listy,listz,interval_size):
-    intensity_list_LOS = defaultdict(list)
-    print('length inside',len(listx))
-    remember_coord=defaultdict(list)
 
-
-    for i in range(0,len(listx)):
-        vector_ref_begining=LOS_creation(listx[i],listy[i],listz[i])[0]
-        #print('ref',vector_ref_begining)
-        vector_ref_end=LOS_creation(listx[i],listy[i],listz[i])[-1]
-        #print(vector_ref_end)
-        dist_x=(vector_ref_end[0]-vector_ref_begining[0])**2
-        dist_y=(vector_ref_end[1]-vector_ref_begining[1])**2
-        dist_z=(vector_ref_end[2]-vector_ref_begining[2])**2
-        distance = np.sqrt(dist_x+dist_y+dist_z)
-        #print('distance', distance)
-        theta=np.arcsin((vector_ref_end[2]-vector_ref_begining[2])/distance)
-        #print('theta',theta)
-        #print ('le cos', np.cos(theta))
-        if 0.9999<(vector_ref_end[1]-vector_ref_begining[1])/(distance*np.cos(theta))<1.001 or -1.001<(vector_ref_end[1]-vector_ref_begining[1])/(distance*np.cos(theta))<-0.999 :
-            #print('here')
-            phi=np.arccos((vector_ref_end[0]-vector_ref_begining[0])/(distance*np.cos(theta)))
-        else:
-            phi=np.arcsin((vector_ref_end[1]-vector_ref_begining[1])/(distance*np.cos(theta)))
-            #print('value',(vector_ref_end[1]-vector_ref_begining[1])/(distance*np.cos(theta)))
-        #print('phi',phi)
-        number_of_interval=int((distance/interval_size))
-        #print('numb of int', number_of_interval)
-        new_distance=0
-        new_y=0
-        new_x=0
-        new_z=106
-        for n in range (0,number_of_interval):
-            new_distance=new_distance+interval_size
-            new_y=new_distance*np.cos(theta)*np.sin(phi)
-            new_x=new_distance*np.cos(theta)*np.cos(phi)
-            new_z=new_distance*np.sin(phi)
-            #print('new',new_distance,new_x,new_y,new_z)
-            #print('g=',function_g(new_x,new_y,new_z,47))
-            intensity_list_LOS[i].append(function_g(new_x,new_y,new_z,47))
-            remember_coord[i].append({'x':new_x, 'y':new_y, 'z':new_z})
-    intensity_list_LOS[i].append(function_g(vector_ref_end[0],vector_ref_end[1],vector_ref_end[2],47))
-
-    print('seconde fonction')
-    print('coordinate of the point number 1 in the line number 6 of the CCD1',remember_coord[6][0])
-    print('coordinate of the last point in the line number 6 of the CCD1',remember_coord[6][-1])
-    print('intensity of that point 1', intensity_list_LOS[6][0])
-    print('value of the integral along line number 6', np.sum(intensity_list_LOS[6]))
-    return intensity_list_LOS,remember_coord
 
 def final_function(nb_cell_x,nb_cell_z,spacing_x,spacing_z,nb_voxel_x,nb_voxel_y,nb_voxel_z,radius_tokamak):
     #creation of the 3 CCD at the good place in space
@@ -546,7 +489,6 @@ def final_function(nb_cell_x,nb_cell_z,spacing_x,spacing_z,nb_voxel_x,nb_voxel_y
     list_x_CCD3, list_y_CCD3,list_z_CCD3,list_x_CCD2,list_y_CCD2,list_z_CCD2,list_x_CCD1,list_y_CCD1,list_z_CCD1=lists_for_LOS_draw(CCD_1,CCD_2,CCD_3)
 
     A=max_z_among_all_CCD(CCD_1,CCD_2,CCD_3)
-    print('Ay i m here',A )
 
     S=voxel_creation(A,nb_voxel_x,nb_voxel_y,nb_voxel_z,radius_tokamak)
 
