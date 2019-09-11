@@ -286,7 +286,7 @@ def max_z_among_all_CCD(CCD_1,CCD_2,CCD_3):
     max_for_CCD2=find_furthest_z(CCD_2,Pinhole_coord2)
 
     max_for_CCD3=find_furthest_z(CCD_3,Pinhole_coord3)
-    
+
     supermax=0
     if max_for_CCD1>max_for_CCD2:
         supermax=max_for_CCD1.copy()
@@ -486,7 +486,14 @@ def example_of_use_of_integration():
 def final_function(nb_cell_x,nb_cell_z,spacing_x,spacing_z,nb_voxel_x,nb_voxel_y,nb_voxel_z,radius_tokamak):
     #creation of the 3 CCD at the good place in space
     CCD_1,CCD_2,CCD_3=creation_of_3D_sensor_in_space(function_creation(nb_cell_x, nb_cell_z, spacing_x, spacing_z),distance_pinhole_CCD)
-    list_x_CCD3, list_y_CCD3,list_z_CCD3,list_x_CCD2,list_y_CCD2,list_z_CCD2,list_x_CCD1,list_y_CCD1,list_z_CCD1=lists_for_LOS_draw(CCD_1,CCD_2,CCD_3)
+
+    if __name__=="__main__":
+
+        list_x_CCD3, list_y_CCD3,list_z_CCD3,list_x_CCD2,list_y_CCD2,list_z_CCD2,list_x_CCD1,list_y_CCD1,list_z_CCD1=lists_for_LOS_draw(CCD_1,CCD_2,CCD_3,['CCD1','CCD2','CCD3'])
+
+    else :
+        list_x_CCD3, list_y_CCD3,list_z_CCD3,list_x_CCD2,list_y_CCD2,list_z_CCD2,list_x_CCD1,list_y_CCD1,list_z_CCD1=lists_for_LOS_draw(CCD_1,CCD_2,CCD_3)
+
 
     A=max_z_among_all_CCD(CCD_1,CCD_2,CCD_3)
 
@@ -501,18 +508,4 @@ def final_function(nb_cell_x,nb_cell_z,spacing_x,spacing_z,nb_voxel_x,nb_voxel_y
     np.save('projections.npy',projections)
     return projections,distance_pinhole_CCD
 
-#final_function(30,3,0.979,0.112,30,30,3,100)
-
-if __name__=="__main__":
-
-    projections,maxz=final_function(30,3,0.73,0.112,20,20,3,100)
-
-    sensor_index=list(np.arange(0,270))
-    fig,axes= plt.subplots(1,len(projections[0]))
-    all_projections=np.zeros_like(projections[0])
-    for i in sensor_index:
-        all_projections=np.maximum(projections[i], all_projections)
-    for ax,cross_section in zip(axes,all_projections):
-        ax.imshow(cross_section)
-
-    plt.show()
+final_function(20,3,1,1,20,20,3,100)
