@@ -1,7 +1,7 @@
 import numpy as np
-from gaussian_blob import gaussian_zz_cone
-from gaussian_blob import flattop
-from gaussian_blob import gaussian_3d
+from test_gaussian_V2 import gaussian_zz_cone
+from test_gaussian_V2 import flattop
+from test_gaussian_V2 import gaussian_3d
 from algo_tomo_new import final_function
 from algo_tomo_new import max_z_among_all_CCD
 from reconstructions import tikhonov
@@ -152,7 +152,7 @@ def unitest():
     optimal_alpha_list=[]
     optimal_accuracy_list=[]
     alpha_list=[]
-    for i in range(5):
+    for i in range(1):
 
         for alpha in [2000]:
 
