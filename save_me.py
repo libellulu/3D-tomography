@@ -6,9 +6,9 @@ from mpl_toolkits.mplot3d import Axes3D
 import matplotlib as mpl
 
 
-projections,maxz=final_function(20,11,0.65,0.04,50,50,3,100)
+projections,maxz=final_function(20,3,0.65,0.112,50,50,3,100)
 
-sensor_index=list(np.arange(0,660))
+sensor_index=list(np.arange(0,180))
 fig,axes= plt.subplots(1,len(projections[0]))
 all_projections=np.zeros_like(projections[0])
 for i in sensor_index:

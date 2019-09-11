@@ -1,12 +1,14 @@
 import numpy as np
-from test_gaussian import gaussian_zz_cone
+from gaussian_blob import gaussian_zz_cone
+from gaussian_blob import flattop
+from gaussian_blob import gaussian_3d
 from algo_tomo_new import final_function
 from algo_tomo_new import max_z_among_all_CCD
 from reconstructions import tikhonov
 import matplotlib.pyplot as plt
 from collections import defaultdict
 
-def comparison(printplot,nb_cell_x,nb_cell_z,spacing_x,spacing_z,nb_voxel_x,nb_voxel_y,nb_voxel_z,radius_tokamak,pinhole_to_CCD1,pinhole_to_CCD2,pinhole_to_CCD3,alpha):
+def comparison(printplot,nb_cell_x,nb_cell_z,spacing_x,spacing_z,nb_voxel_x,nb_voxel_y,nb_voxel_z,radius_tokamak,alpha):
     """
     Function that compares the reconstruction of the signal with the generated
     signals
@@ -34,17 +36,18 @@ def comparison(printplot,nb_cell_x,nb_cell_z,spacing_x,spacing_z,nb_voxel_x,nb_v
     g : the reconstructed signal
     scalar_field_value : the plasma phantom
     """
-    real_projection,maxz=final_function(nb_cell_x,nb_cell_z,spacing_x,spacing_z,nb_voxel_x,nb_voxel_y,nb_voxel_z,radius_tokamak,pinhole_to_CCD1,pinhole_to_CCD2,pinhole_to_CCD3)
-
+    real_projection,maxz=final_function(nb_cell_x,nb_cell_z,spacing_x,spacing_z,nb_voxel_x,nb_voxel_y,nb_voxel_z,radius_tokamak)
 
     # Test plot --------------------------------------------
     # In this example the distribution starts in the center,
     # and then moves to the top right corner while shrinking
 
 
-    x_min, x_max = (-radius_tokamak, radius_tokamak)
-    y_min, y_max = (-radius_tokamak, radius_tokamak)
-    z_min, z_max = (-maxz,maxz)
+    # Test gaussian_3d and flattop ------------------------------------------------------------
+
+    x_min, x_max = (-100, 100)
+    y_min, y_max = (-100, 100)
+    z_min, z_max = (-4, 4)
 
     x_points, y_points, z_points = (nb_voxel_x,nb_voxel_y,nb_voxel_z)
 
@@ -54,31 +57,40 @@ def comparison(printplot,nb_cell_x,nb_cell_z,spacing_x,spacing_z,nb_voxel_x,nb_v
 
     scalar_field_coordinates = np.meshgrid(z_array, y_array, x_array, indexing='ij')
 
-    scalar_field_values_1 = gaussian_zz_cone(x=scalar_field_coordinates[2].flatten(),
-                                           y=scalar_field_coordinates[1].flatten(),
-                                           z=scalar_field_coordinates[0].flatten(),
-                                           base_1=-150, base_2=150,
-                                           mu_x_1=-15, mu_x_2=-15,
-                                           mu_y_1=-15, mu_y_2=-15,
-                                           sigma_x_1=25, sigma_x_2=25,
-                                           sigma_y_1=25, sigma_y_2=25)
+    x_coordinates = scalar_field_coordinates[2].flatten()
+    y_coordinates = scalar_field_coordinates[1].flatten()
+    z_coordinates = scalar_field_coordinates[0].flatten()
 
-    scalar_field_values_2 = gaussian_zz_cone(x=scalar_field_coordinates[2].flatten(),
-                                       y=scalar_field_coordinates[1].flatten(),
-                                       z=scalar_field_coordinates[0].flatten(),
-                                       base_1=-100, base_2=100,
-                                       mu_x_1=-45, mu_x_2=60,
-                                       mu_y_1=-50, mu_y_2=130,
-                                       sigma_x_1=15, sigma_x_2=15,
-                                       sigma_y_1=15, sigma_y_2=15)
-    scalar_field_values = (scalar_field_values_1+scalar_field_values_2).reshape((z_points, y_points, x_points))
+    blob_z = np.linspace(-8, 8, 5)
+    phantoms = []
+
+    for z in blob_z:
+
+        phantom = flattop(x=x_coordinates, y=y_coordinates,
+                          center_x=0, center_y=0, width=85 * 2, height=1, degree=2)
+
+        phantom += gaussian_3d(x=x_coordinates, y=y_coordinates, z=z_coordinates,
+                               mu_x=20, mu_y=20, mu_z=z,
+                               sigma_x=5, sigma_y=5, sigma_z=4,
+                               height=4)
+
+        phantoms.append(phantom.reshape((z_points, y_points, x_points)))
 
     if printplot==1:
-        fig, axes = plt.subplots(1, len(scalar_field_values))
 
-        for ax, cross_section in zip(axes, scalar_field_values):
-            ax.imshow(cross_section)
+        fig, axes = plt.subplots(len(phantoms), z_points)
 
+        for sub_axes, phantom in zip(axes, phantoms):
+            for ax, cross_section in zip(sub_axes, phantom):
+                im = ax.pcolormesh(np.linspace(-100, 100, x_points + 1),
+                                   np.linspace(100, -100, y_points + 1),
+                                   cross_section,
+                                   vmin=0, vmax=2)
+                ax.set_aspect('equal', adjustable='box')
+
+        fig.colorbar(im, ax=axes.ravel().tolist())
+
+        plt.show()
 
     # Simulate tomography signals --------------------------------------------------
 
@@ -86,55 +98,96 @@ def comparison(printplot,nb_cell_x,nb_cell_z,spacing_x,spacing_z,nb_voxel_x,nb_v
     print('Reading:', fname)
     projections = np.load(fname)
 
-    print('projections:', projections.shape, projections.dtype)
+    #print('projections:', projections.shape, projections.dtype)
 
     # -------------------------------------------------------------------------
 
     P = projections.reshape((projections.shape[0], -1))
 
-    print('P:', P.shape, P.dtype)
+    #print('P:', P.shape, P.dtype)
 
-    signals = np.dot(P, scalar_field_values.flatten())
+    g_list=[]
+    signal_list=[]
 
-    print('Signals:', signals.shape, signals.dtype)
-
-    np.save("signals.npy", signals)
-    np.save("phantom.npy", scalar_field_values)
+    for i in range(0,len(phantoms)):
+        signals = np.dot(P, phantoms[i].flatten())
 
 
-    g = tikhonov(signals,alpha)
+        print('Signals:', signals.shape, signals.dtype)
+
+
+        np.save("signals.npy", signals)
+        np.save("phantom.npy", phantoms)
+
+        g=tikhonov(signals,alpha)
+        g_list.append(g)
+        #
+        # if printplot==1:
+        #
+        #     fig, axes = plt.subplots(1, len(g))
+        #     for g_cut, ax in zip(g, axes):
+        #         ax.imshow(g_cut)
+        #     plt.show()
 
     if printplot==1:
 
-        fig, axes = plt.subplots(1, len(g))
-        for g_cut, ax in zip(g, axes):
-            ax.imshow(g_cut)
+        fig, axes = plt.subplots(len(g_list), z_points)
+
+        for sub_axes, phantom in zip(axes, g_list):
+            for ax, cross_section in zip(sub_axes, g):
+                im = ax.pcolormesh(np.linspace(-100, 100, x_points + 1),
+                                   np.linspace(100, -100, y_points + 1),
+                                   cross_section,
+                                   vmin=0, vmax=2)
+                ax.set_aspect('equal', adjustable='box')
+
+        # fig.colorbar(im, ax=axes.ravel().tolist())
+
         plt.show()
-        
-    return g,scalar_field_values
+
+    return g_list,phantoms
 
 def unitest():
     accuracy_list= []
-
+    optimal_alpha_list=[]
+    optimal_accuracy_list=[]
     alpha_list=[]
-    for alpha in (0.02,0.03,0.04,0.06,0.07,):
-        g,plasma=comparison(0,30,3,0.979,0.112,18,18,3,100,5,5,5,alpha)
-        accuracy=1-(np.sum(np.abs(g-plasma))/(np.sum(plasma)))
-        accuracy_list.append(accuracy)
+    for i in range(5):
+    #for i in [2,3]:
+        print('firsti', i)
+        for alpha in [2000]:
+        #for alpha in list(np.arange(500,3000,100)):
+            g,plasma=comparison(0,20,9,0.65,0.04,20,20,3,100,alpha)
+            print('length of g',len(g))
+            print('length plasma',len(plasma))
+            accuracy=1-(np.sum(np.abs(g[i]-plasma[i]))/(np.sum(plasma[i])))
+            print('serie',i)
+            fig, axes = plt.subplots(1, len(g[i]))
+            for g_cut, ax in zip(g[i], axes):
+                ax.imshow(g_cut)
+            plt.show()
+            accuracy_list.append(accuracy)
 
-        alpha_list.append(alpha)
-        print('alpha', alpha)
-        print('mylist',accuracy_list)
+            alpha_list.append(alpha)
 
-    maximum=max(accuracy_list)
-    print('max array',maximum)
-    index_max=accuracy_list.index(maximum)
-    print('index',index_max)
-    print('optimum parameters','n=',n_list[index_max],'alpha=',alpha_list[index_max],'accuracy=',accuracy_list[index_max])
-    return maximum,index_max
+            print('alpha', alpha)
+            print('mylist',accuracy_list)
+        print('serie',i)
+        maximum=max(accuracy_list)
 
+        print('max array',maximum)
+        index_max=accuracy_list.index(maximum)
+        alpha_max=alpha_list[index_max]
+        #print('index',index_max)
+        print('optimum parameters','alpha=',alpha_list[index_max],'accuracy=',accuracy_list[index_max])
+        accuracy_list= []
+        alpha_list=[]
+        optimal_accuracy_list.append(maximum)
+        optimal_alpha_list.append(alpha_max)
+    print ('list of alphas',optimal_alpha_list)
+    print('list of accuracy',optimal_accuracy_list)
 
-    return accuracy
+    return optimal_accuracy_list, optimal_alpha_list
 
 
 def control_nb_cells():
@@ -219,9 +272,9 @@ def control_dist_pinhole():
     print('optimum parameters','distance=',n_list[index_max],'alpha =',alpha_list[index_max],'accuracy=',accuracy_list[index_max])
     return maximum,index_max
 
-max, imax=control_dist_pinhole()
-print('out of function', max,imax)
-#unitest()
+#max, imax=control_dist_pinhole()
+#print('out of function', max,imax)
+unitest()
 #g,plasma = comparison(1,30,3,0.98,0.112,20,20,3,100,8.35,8.35,8.35,0.2)
 #accuracy=1-(np.sum(np.abs(g-plasma))/(np.sum(plasma)))
 #print('accuracy=',accuracy)

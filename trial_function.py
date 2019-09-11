@@ -151,9 +151,9 @@ def unitest():
 
     alpha_list=[]
 
-    #for alpha in list(np.arange(290,310,0.5)):
-    for alpha in [1100]:
-        g,plasma=comparison(0,20,9,0.65,0.04,20,20,3,100,alpha)
+    #for alpha in list(np.arange(2000,2500,50)):
+    for alpha in[800] :
+        g,plasma=comparison(1,20,9,0.65,0.04,20,20,3,100,alpha)
         accuracy=1-(np.sum(np.abs(g-plasma))/(np.sum(plasma)))
         accuracy_list.append(accuracy)
 
