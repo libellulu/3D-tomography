@@ -1,5 +1,5 @@
 import numpy as np
-from test_gaussian import gaussian_zz_cone
+from test_gaussian_V1 import gaussian_zz_cone
 from algo_tomo_new import final_function
 from algo_tomo_new import max_z_among_all_CCD
 from reconstructions import tikhonov
