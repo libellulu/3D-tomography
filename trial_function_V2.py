@@ -148,6 +148,21 @@ def comparison(printplot,nb_cell_x,nb_cell_z,spacing_x,spacing_z,nb_voxel_x,nb_v
     return g_list,phantoms
 
 def unitest():
+    """Function  to try a specific combination of parameter and
+    we just have to tune the alpha
+    Will print the best alpha
+
+    Parameters
+    ----------
+    None, the alpha and the parameters are changed in the declaration of the
+    function and we call it without parameters
+
+    Returns
+    -------
+    accuracy : the best accuracy
+    index_max : the index in the lists where we have the parameters for this
+    best accuracy
+    """
     accuracy_list= []
     optimal_alpha_list=[]
     optimal_accuracy_list=[]
