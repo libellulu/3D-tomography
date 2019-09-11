@@ -153,10 +153,9 @@ def unitest():
     optimal_accuracy_list=[]
     alpha_list=[]
     for i in range(5):
-    #for i in [2,3]:
-        print('firsti', i)
+
         for alpha in [2000]:
-        #for alpha in list(np.arange(500,3000,100)):
+
             g,plasma=comparison(0,20,9,0.65,0.04,20,20,3,100,alpha)
             print('length of g',len(g))
             print('length plasma',len(plasma))
@@ -190,91 +189,4 @@ def unitest():
     return optimal_accuracy_list, optimal_alpha_list
 
 
-def control_nb_cells():
-    # tuning of the x and z number of cells
-    accuracy_list= []
-    n_list= []
-    alpha_list=[]
-    n=2
-
-    for alpha in (0.02,0.05,0.08):
-
-        if n ==2 :
-            print('surviving',n,alpha)
-            g,plasma=comparison(1,16,n,0.95,0.95,18,18,3,100,5,5,5,alpha)
-
-            accuracy=1-(np.sum(np.abs(g-plasma))/(np.sum(plasma)))
-            accuracy_list.append(accuracy)
-            n_list.append(n)
-            alpha_list.append(alpha)
-            print('mylist',accuracy_list)
-
-    maximum=max(accuracy_list)
-    print('max array',maximum)
-    index_max=accuracy_list.index(maximum)
-    print('index',index_max)
-    print('optimum parameters','n=',n_list[index_max],'alpha=',alpha_list[index_max],'accuracy=',accuracy_list[index_max])
-    return maximum,index_max
-
-#control number of voxel
-def control_nb_voxels():
-    # tuning of the x and z number of cells
-    accuracy_list= []
-    n_list= []
-    alpha_list=[]
-
-
-    for alpha in (0.2,0.3,0.4):
-
-        for n in (5,20):
-
-            print('surviving',n,alpha)
-            g,plasma=comparison(1,4,4,3,3,n,n,3,100,20,alpha)
-
-            accuracy=1-(np.sum(np.abs(g-plasma))/(np.sum(plasma)))
-            accuracy_list.append(accuracy)
-            n_list.append(n)
-            alpha_list.append(alpha)
-            print('mylist',accuracy_list)
-
-    maximum=max(accuracy_list)
-    print('max array',maximum)
-    index_max=accuracy_list.index(maximum)
-    print('index',index_max)
-    print('optimum parameters','n=',n_list[index_max],'alpha=',alpha_list[index_max],'accuracy=',accuracy_list[index_max])
-    return maximum,index_max
-
-#control distance to pinhole
-def control_dist_pinhole():
- # trying for a 4x4, with its best para : nb voxel =15,alpha 0.3
-    accuracy_list= []
-    n_list= []
-    alpha_list=[]
-
-
-    for alpha in (0.12,0.15,0.17):
-
-        for n in (8.7,9,9.3):
-
-            print('surviving',n,alpha)
-            g,plasma=comparison(0,30,3,0.98,0.112,20,20,3,100,n,n,n,alpha)
-            plt.show()
-            accuracy=1-(np.sum(np.abs(g-plasma))/(np.sum(plasma)))
-            accuracy_list.append(accuracy)
-            n_list.append(n)
-            alpha_list.append(alpha)
-            print('mylist',accuracy_list)
-
-    maximum=max(accuracy_list)
-    print('max array',maximum)
-    index_max=accuracy_list.index(maximum)
-    print('index',index_max)
-    print('optimum parameters','distance=',n_list[index_max],'alpha =',alpha_list[index_max],'accuracy=',accuracy_list[index_max])
-    return maximum,index_max
-
-#max, imax=control_dist_pinhole()
-#print('out of function', max,imax)
 unitest()
-#g,plasma = comparison(1,30,3,0.98,0.112,20,20,3,100,8.35,8.35,8.35,0.2)
-#accuracy=1-(np.sum(np.abs(g-plasma))/(np.sum(plasma)))
-#print('accuracy=',accuracy)
