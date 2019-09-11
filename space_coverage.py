@@ -5,6 +5,8 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib as mpl
 
+#file that shows the space covered bythe selected lines of sight.
+#This example shows 180 LOS
 
 projections,maxz=final_function(20,3,0.65,0.112,50,50,3,100)
 
