@@ -31,19 +31,19 @@ The two following pictures show different examples. The first one shows the cove
 
 You can simulate quite a lot with space_coverage.py. You can also decide to simulate only one row of sensors. If you want to check the central row of the second CCD for example, following the previous example, it would be in linspace from 40 to 49.
 
-The black circle simulates the limiter in ISTTOK, radius 85. It enables to see where the plasma is in comparison with the line of sight. You can decide not to print the limiter or change its value.
+The black circle represents the limiter in ISTTOK, radius 85. It enables to see where the plasma is in comparison with the lines of sight. You can decide not to print the limiter or change its value.
 
 ## Second stage, try to find the best reconstruction with the phantom evolving in space
 
-My advice is to begin by using the most simple plasma phantom of test_gaussian_V1. This phantom shows the plasma at the same time in 3 different place.The second version test_gaussian_V2, shows the 3 places at 5 different times.
+My advice is to begin by using the most simple plasma phantom of test_gaussian_V1.py. This phantom shows the plasma at the same time in 3 different places.The second version test_gaussian_V2 shows the 3 places at 5 different times.
 
-When running the program, if you chose the parameter 1 to print the phantom and the reconstruction, here is the phantom you should get :
+When running the program, if you chose the parameter printplot=1 (see explanation in the code) to print the phantom and the reconstruction, here is the phantom you should get :
 
 ![Phantom of V1](https://github.com/libellulu/3D-tomography/blob/master/images/phantom2_zoom.png)
 
 Use the file trial_function_V1 to determine the parameter that give the best reconstruction. The different functions inside of the file are each looping over one parameter which you define the range , and return the configuration that gives the best accuracy of reconstruction. 
 
-Once the best set up is found, use unitest to run only over the alpha. The alpha parameter can take any value above zero and is very sensitive. So a lot of test have to be done....
+Once the best set up is found, use the function unitest (still inside of test_gaussian_V1.py) to run only over the alpha. The alpha parameter can take any value above zero and is very sensitive. So a lot of tests have to be done....
 
 Notice that this program charges the projection.npy and the signals.npy files every time. Once you decide to look for the best alpha, you can comment this part for the program to be faster.
 
