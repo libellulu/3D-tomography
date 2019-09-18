@@ -20,7 +20,7 @@ You need to have the packages for python 3 installed.
 By editing algo_tomo_new.py you can change inside of the file the parameters to adapt. 
 For example, the minor radius of the tokamak and the place of the camera inside of it.
 Running it will print a 3D plot of the tokamak and the lines of sight. 
-![alt text](https://raw.githubusercontent.com/username/projectname/master/images/LOS_cylinderclose.png)
+![Lines of sight of 3D set up](https://raw.githubusercontent.com/libellulu/3D-tomography/master/images/LOS_cylinderclose.png)
 
 You can also check the coverage of the space by the lines of sight with the file space_coverage.py . The only thing to do is to pass the same parameter in final function that you did in algo_tomo_new for the result to be consitent.
 
