@@ -10,6 +10,7 @@ This project help you to find the best configuration to implement a 3D tomograph
 This README is going to explain you how the code can be used an adapted to each personnal case (for other tokamaks and set up than ISTTOK). Then inside of each files, the functions are described (Goal, Parameters, Output).
 
 The parameters that are passed in the function when you first upload them are consistent with ISTTOK set up.
+I will use LOS as an abreviation of lines of sight.
 
 ### Prerequisites
 
@@ -23,13 +24,13 @@ Running it will print a 3D plot of the tokamak and the lines of sight.
 ![Lines of sight of 3D set up](https://github.com/libellulu/3D-tomography/blob/master/images/LOS_cylinderclose.png)
 
 You can also check the coverage of the space by the lines of sight with the file space_coverage.py . The only thing to do is to pass the same parameter in final function that you did in algo_tomo_new for the result to be consitent.
-The two following pictures show different examples. The first one shows the coverage of every lines of sight, and the second picture shows the coverage for the top camera only. To verify the coverage more specifically like on the second picture, you need to know how many LOS each camera has. For example if each camera have 30 LOS, then in the code to see the full coverage, you have to put in linspace from 0 to 89 (90 LOS in total). To see only the top from 0 to 29, the second camera is from 30 to 59... 
+The two following pictures show different examples. The first one shows the coverage of every lines of sight, and the second picture shows the coverage for the top camera only. To verify the coverage more specifically like on the second picture, you need to know how many LOS each camera has. For example if each camera have 90 LOS, then in the code to see the full coverage, you have to put in np.arange from 0 to 269 (90 LOS for 3 cameras in total, and the first sensor is indexed 0). To see only the top camera from 0 to 89, the second camera is from 90 to 179... 
 
 ![Coverage for every camera](https://github.com/libellulu/3D-tomography/blob/master/images/20%2C11%2C065%2C004%2C50%2C50%2C3.png)
 
 ![Coverage for the top camera](https://github.com/libellulu/3D-tomography/blob/master/images/dist_pinhole%3D9.png)
 
-You can simulate quite a lot with space_coverage.py. You can also decide to simulate only one row of sensors. If you want to check the central row of the second CCD for example, following the previous example, it would be in linspace from 40 to 49.
+You can simulate quite a lot with space_coverage.py. You can also decide to simulate only one row of sensors. If you want to check the central row of the first CCD for example, following the previous example, it would be: np.arange(1,89,3) since the first sensor of the middle row is number one, and then it isevery 3 sensors).
 
 The black circle represents the limiter in ISTTOK, radius 85. It enables to see where the plasma is in comparison with the lines of sight. You can decide not to print the limiter or change its value.
 
